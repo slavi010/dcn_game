@@ -12,7 +12,7 @@ import '../model/board/server_states.dart';
 part 'api.g.dart';
 
 /// Client side API (callings to the server side)
-@RestApi(baseUrl: "http://localhost")
+@RestApi(baseUrl: "https://slavi.dev/dcn_web/api/")
 abstract class RestClient {
   factory RestClient(Dio dio, {String baseUrl}) = _RestClient;
 

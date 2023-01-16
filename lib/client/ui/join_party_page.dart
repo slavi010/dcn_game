@@ -1,5 +1,5 @@
 import 'package:cubes/cubes.dart';
-import 'package:dcn_game/client/party_repository.dart';
+import 'package:dcn_game/model/repository/party_repository.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';

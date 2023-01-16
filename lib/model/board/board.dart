@@ -1,7 +1,10 @@
-import 'dart:ui';
+import 'dart:math';
 
 import 'package:dcn_game/model/board/party.dart';
 import 'package:json_annotation/json_annotation.dart';
+
+import 'mystery_card.dart';
+import 'party_action.dart';
 
 // part 'board.g.dart';
 
@@ -80,7 +83,7 @@ abstract class BTile {
     return nexts
         .where((tile) =>
             tile.canPass(player.vehicle!) &&
-            1 / tile.getSpeed() <= player.autonomy)
+            1 / tile.getSpeed() * player.cardSpeedModifier() <= player.autonomy)
         .toList();
   }
 
@@ -204,6 +207,8 @@ abstract class DecoratorBTile extends BTile {
           return WarehouseBTile(null);
         }
         return POIBTile(null, poiName: args["poiName"]);
+      case MysteryCardBTile.sType:
+        return MysteryCardBTile(null);
       default:
         throw Exception("Unknown type of DecoratorBTile: $type");
     }
@@ -356,6 +361,27 @@ class WarehouseBTile extends POIBTile {
 
   @override
   bool get isWarehouse => true;
+}
+
+/// Mystery tile
+/// Pick a random mystery card
+class MysteryCardBTile extends DecoratorBTile {
+  MysteryCardBTile(BTile? tile) : super(tile);
+
+  static const String sType = "mystery_card";
+
+  @override
+  String get type => sType;
+
+  @override
+  List<BoardAction> onStop() {
+    return [];
+  }
+
+  @override
+  List<BoardAction> onPass() {
+    return [TakeMysteryCard()];
+  }
 }
 
 /// store the points cost (buy and use) of a vehicle
@@ -645,6 +671,14 @@ abstract class BoardAction {}
 /// Take a mystery card
 class TakeMysteryCard extends BoardAction {
   TakeMysteryCard();
+
+  /// Return a random mystery card
+  static MysteryCard getMysteryCard() {
+    final random = Random();
+    final factory = MysteryCard.factories.values
+        .toList()[random.nextInt(MysteryCard.factories.length)];
+    return factory();
+  }
 }
 
 /// Skip the next turn
@@ -690,9 +724,6 @@ class Player {
   /// The current position of the player
   BTile? currentTile;
 
-  /// The number of turn to be stuck
-  int stuckTurns;
-
   /// current points of the player
   PointCard points;
 
@@ -701,6 +732,9 @@ class Player {
 
   /// If the player can't play anymore
   bool out;
+
+  /// The mysteries cards that affect the player
+  List<MysteryCard> mysteryCards;
 
   Player(
     this.id, {
@@ -711,27 +745,44 @@ class Player {
     this.vehicles = const [],
     this.goalPOI,
     this.currentTile,
-    this.stuckTurns = 0,
     this.points = const PointCard(
         money: 10, energy: 10, environment: 10, performance: 10),
     this.ready = false,
     this.out = false,
+    this.mysteryCards = const [],
   });
-
-  bool canMove({bool consumeStuckTurns = true}) {
-    final canMove = stuckTurns == 0;
-    if (consumeStuckTurns && stuckTurns > 0) {
-      stuckTurns--;
-    }
-    return canMove;
-  }
 
   /// return the index of the player in the participants list of the party
   int indexPlayer(Party party) {
-    return party
-        .players
-        .map((p) => p.id)
-        .toList()
-        .lastIndexOf(id);
+    return party.players.map((p) => p.id).toList().lastIndexOf(id);
+  }
+
+  double cardSpeedModifier() {
+    return mysteryCards.fold(1.0, (p, m) => p * m.speedFactor);
+  }
+
+  /// perform the RoundTimedMysteryCard action (subtract 1 round to the timer)
+  /// if the timer of the card is 0, remove it from the player cards
+  void updateRoundTimedMysteryCard(Party party) {
+    for (final card in mysteryCards) {
+      if (card is RoundTimedMysteryCard) {
+        if (card.countDown()) {
+          party.addAction(PartyAction.updatePlayerMysteryCards(
+              id, mysteryCards.where((c) => c.id != card.id).toList()));
+        }
+      }
+    }
+  }
+
+  /// Return true if this player has been stuck
+  bool isStuck() {
+    // perform the StuckMysteryCard action (stuck the player)
+    // if the player has a MysteryCard, remove it from the player cards
+    for (final card in mysteryCards) {
+      if (card.stuckPlayerWhenPossessed) {
+        return true;
+      }
+    }
+    return false;
   }
 }

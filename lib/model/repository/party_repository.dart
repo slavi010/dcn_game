@@ -2,9 +2,9 @@ import 'package:cubes/cubes.dart';
 import 'package:dcn_game/model/board/party_action.dart';
 import 'package:hive/hive.dart';
 
-import '../model/board/board.dart';
-import '../model/board/party.dart';
-import '../server/api.dart';
+import '../board/board.dart';
+import '../board/party.dart';
+import '../../server/api.dart';
 
 import 'dart:async';
 

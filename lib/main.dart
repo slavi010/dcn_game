@@ -1,5 +1,6 @@
 import 'package:cubes/cubes.dart';
-import 'package:dcn_game/client/party_repository.dart';
+import 'package:dcn_game/model/repository/event_animation_repository.dart';
+import 'package:dcn_game/model/repository/party_repository.dart';
 import 'package:dcn_game/client/ui/board_page.dart';
 import 'package:dcn_game/client/ui/cant_find_the_party_page.dart';
 import 'package:dcn_game/client/ui/join_party_page.dart';
@@ -15,8 +16,8 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:hive/hive.dart';
 
-import '../model/board/party.dart';
-import 'ui/admin_page.dart';
+import 'model/board/party.dart';
+import 'client/ui/admin_page.dart';
 
 void main() async {
   // load hive box
@@ -28,6 +29,8 @@ void main() async {
   // dio.interceptors.add(LogInterceptor(responseBody: true, responseHeader: true, requestBody: true, requestHeader: true));
   // dio.options.contentType = Headers.jsonContentType;
   Cubes.registerSingleton<PartyRepository>(PartyRepository(RestClient(dio)));
+  Cubes.registerSingleton<EventAnimationRepository>(
+      EventAnimationRepository());
 
   // register cubes
   Cubes.registerFactory<JoinPartyPageCube>((i) => JoinPartyPageCube());
@@ -46,6 +49,10 @@ void main() async {
       (i) => ShopVehiclePageCube(i.get()));
   Cubes.registerFactory<VehicleCardWidgetCube>(
       (i) => VehicleCardWidgetCube(i.get()));
+  Cubes.registerFactory<MysteryCardDialogWidgetCube>(
+      (i) => MysteryCardDialogWidgetCube(i.get()));
+  Cubes.registerFactory<MysteryCardWidgetCube>(
+      (i) => MysteryCardWidgetCube(i.get()));
 
   runApp(const MyApp());
 }

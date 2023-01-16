@@ -3,7 +3,7 @@ import 'package:dcn_game/client/ui/widget/my_widget.dart';
 import 'package:flutter/material.dart';
 
 import '../../model/board/party.dart';
-import '../party_repository.dart';
+import '../../model/repository/party_repository.dart';
 
 class WaitingForPlayersPage extends CubeWidget<WaitingForPlayersPageCube> {
   const WaitingForPlayersPage({super.key});

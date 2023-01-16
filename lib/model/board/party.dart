@@ -2,6 +2,7 @@ import 'package:dcn_game/model/board/party_action.dart';
 import 'package:dcn_game/model/board/server_states.dart';
 import 'package:uuid/uuid.dart';
 
+import '../repository/event_animation_repository.dart';
 import 'board.dart';
 
 /// Contain all the information about the current party
@@ -45,10 +46,14 @@ class Party {
       serverState != null && serverState! is! WaitingForPlayerServerState;
 
   /// add a new action to the party
-  void addAction(PartyAction action, {bool perform = true}) {
+  void addAction(PartyAction action, {bool perform = true, EventAnimationRepository? eventAnimationRepository}) {
     history.add(action);
     if (perform) {
       action.perform(this);
+    }
+
+    if (eventAnimationRepository != null) {
+      action.performClientSide(this, eventAnimationRepository);
     }
   }
 

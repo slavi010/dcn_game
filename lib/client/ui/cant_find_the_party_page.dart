@@ -2,7 +2,7 @@
 import 'package:cubes/cubes.dart';
 import 'package:flutter/material.dart';
 
-import '../party_repository.dart';
+import '../../model/repository/party_repository.dart';
 
 class CantFindThePartyPage extends CubeWidget<CantFindThePartyPageCube> {
   const CantFindThePartyPage({super.key});

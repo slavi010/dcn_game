@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:dcn_game/model/board/mystery_card.dart';
+import 'package:dcn_game/model/event_animation.dart';
 import 'package:uuid/uuid.dart';
 
 import 'board.dart';
@@ -358,14 +360,27 @@ class NewPlayerServerState extends ServerState {
     } else {
       // choose the next player normally
       int currentIndex;
+      currentIndex = etat.party.players
+          .indexWhere((p) => p.id == (etat.party.currentPlayer?.id ?? -1));
+
+      // number of skipped players
+      int cpt = 0;
       do {
-        currentIndex = etat.party.players
-            .indexWhere((p) => p.id == (etat.party.currentPlayer?.id ?? -1));
+        // skip the player turn
+        if (cpt > 0) {
+          // update mystery cards timer
+          etat.party.players[currentIndex]
+              .updateRoundTimedMysteryCard(etat.party);
+        }
+
         currentIndex++;
+        cpt++;
+
         if (currentIndex >= etat.party.players.length) {
           currentIndex = 0;
         }
-      } while (!etat.party.players[currentIndex].canMove());
+      } while (etat.party.players[currentIndex].out ||
+          etat.party.players[currentIndex].isStuck());
 
       etat.party.addAction(
           PartyAction.updateCurrentPlayer(etat.party.players[currentIndex].id));
@@ -429,25 +444,36 @@ class MovePlayerServerState extends ServerState {
 
   @override
   void init() {
-    // check if the player can move
-    if (etat.party.currentPlayer!.autonomy <= 0) {
+    final currentPlayer = etat.party.currentPlayer!;
+    var endOfTurn = currentPlayer.autonomy <= 0;
+
+    // get the bard action of the tile
+    var boardActions = currentPlayer.currentTile!.onPass();
+    if (endOfTurn) {
+      boardActions += currentPlayer.currentTile!.onStop();
+    }
+
+    // perform the board action and if its end of turn, end the turn
+    if (performBoardAction(boardActions) || endOfTurn) {
       etat.state = NewPlayerServerState(etat);
       return;
     }
 
     // save the current position before the move for after when checking
     // if hitting a branch
-    final BTile previousTile = etat.party.currentPlayer!.currentTile!;
+    final BTile previousTile = currentPlayer.currentTile!;
 
     // move the player
-    etat.party.addAction(PartyAction.movePlayer(etat.party.currentPlayer!.id,
-        idTile, etat.party.currentPlayer!.autonomy - 1/previousTile.getSpeed()));
+    etat.party.addAction(PartyAction.movePlayer(
+        currentPlayer.id,
+        idTile,
+        currentPlayer.autonomy -
+            1 / previousTile.getSpeed() * currentPlayer.cardSpeedModifier()));
 
     // check if the player is on the target
-    if (etat.party.currentPlayer!.currentTile!.id ==
-        etat.party.currentPlayer!.goalPOI!.id) {
+    if (currentPlayer.currentTile!.id == currentPlayer.goalPOI!.id) {
       // if the poi is the warehouse ?
-      if (etat.party.currentPlayer!.currentTile!.containsWarehouse()) {
+      if (currentPlayer.currentTile!.containsWarehouse()) {
         // if the he is the first player to attend to the warehouse,
         // turn true "End of Round"
         if (!etat.party.eor) {
@@ -455,16 +481,16 @@ class MovePlayerServerState extends ServerState {
               true,
               etat.party.players
                   .map((p) => p.id)
-                  .where((pId) => pId != etat.party.currentPlayer!.id)
+                  .where((pId) => pId != currentPlayer.id)
                   .toList()));
           // set autonomy to 0 to prevent the player to move
-          etat.party.addAction(PartyAction.updateVehicleAutonomy(
-              etat.party.currentPlayer!.id, 0));
+          etat.party.addAction(
+              PartyAction.updateVehicleAutonomy(currentPlayer.id, 0));
         }
       } else {
         // set the objective to the warehouse
         etat.party.addAction(PartyAction.updatePlayerGoalPOI(
-            etat.party.currentPlayer!.id,
+            currentPlayer.id,
             etat.party.board.tiles
                 .firstWhere((element) => element.containsWarehouse())
                 .id));
@@ -477,15 +503,67 @@ class MovePlayerServerState extends ServerState {
     // - 0 : no possible move (ask the player to move backward)
     // - 1 : A possible way (move automatically)
     // - >1 : Multiple possible way (ask the play)
-    final possibleNextMove = etat.party.currentPlayer!.currentTile!.nexts
+    final possibleNextMove = currentPlayer.currentTile!.nexts
         .where((t) => t.id != previousTile.id)
         .toList();
-    if (possibleNextMove.length != 1 &&
-        etat.party.currentPlayer!.autonomy > 0) {
+    if (possibleNextMove.length != 1 && currentPlayer.autonomy > 0) {
       etat.state = ChooseBranchServerState(etat);
     } else {
       etat.state = MovePlayerServerState(etat, possibleNextMove.first.id);
     }
+  }
+
+  /// Perform a list of board actions
+  /// True is returned if is the end of the player turn
+  bool performBoardAction(List<BoardAction> boardActions) {
+    final currentPlayer = etat.party.currentPlayer!;
+    var endOfTurn = false;
+
+    for (BoardAction boardAction in boardActions) {
+      switch (boardAction.runtimeType) {
+        case TakeMysteryCard:
+          // pick a card
+          final card = TakeMysteryCard.getMysteryCard();
+
+          // launch the pick card animation
+          etat.party.addAction(
+            PartyAction.eventAnimation(
+              MysteryCardPickedEventAnimation(
+                mysteryCard: card,
+                playerId: currentPlayer.id,
+              ),
+            ),
+          );
+
+          if (card.stopPlayerTurnWhenPicked) {
+            endOfTurn = true;
+          }
+
+          // is a card that is applied to all players ?
+          if (card is AllPlayersMysteryCard) {
+            for (Player player in etat.party.players) {
+              if (card is RoundTimedMysteryCard) {
+                etat.party.addAction(PartyAction.updatePlayerMysteryCards(
+                    player.id, player.mysteryCards + [card]));
+              } else {
+                // TODO : if is oneshot card
+              }
+            }
+          } else {
+            if (card is RoundTimedMysteryCard) {
+              etat.party.addAction(PartyAction.updatePlayerMysteryCards(
+                  currentPlayer.id, currentPlayer.mysteryCards + [card]));
+            } else {
+              // TODO : if is oneshot card
+            }
+          }
+          break;
+        default:
+          throw Exception('BoardAction not implemented : $boardAction');
+      }
+    }
+
+    return endOfTurn;
   }
 }
 

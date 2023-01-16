@@ -27,3 +27,4 @@ All rights reserved. Any redistribution or reproduction of part or all of the co
 
 ## Code source author
 - [Sviatoslav BESNARD](https://slavi.dev)
+

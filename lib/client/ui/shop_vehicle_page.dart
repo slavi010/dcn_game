@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../model/board/board.dart';
 import '../../model/board/party.dart';
-import '../party_repository.dart';
+import '../../model/repository/party_repository.dart';
 import 'widget/my_widget.dart';
 
 /// Page that allow user to buy and sell vehicles

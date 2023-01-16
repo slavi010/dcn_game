@@ -1,11 +1,14 @@
 import 'package:cubes/cubes.dart';
+import 'package:dcn_game/model/repository/event_animation_repository.dart';
 
-import 'package:dcn_game/client/party_repository.dart';
+import 'package:dcn_game/model/repository/party_repository.dart';
 import 'package:dcn_game/client/ui/widget/my_widget.dart';
 import 'package:flutter/material.dart';
 
 import '../../model/board/board.dart';
+import '../../model/board/mystery_card.dart';
 import '../../model/board/party.dart';
+import '../../model/event_animation.dart';
 
 /// The board page
 /// The screen is divided in 2 parts:
@@ -21,43 +24,46 @@ class BoardPage extends CubeWidget<BoardPageCube> {
             appBar: AppBar(
               title: const Text('Board'),
             ),
-            body: Row(
-              children: [
-                // map
-                Expanded(
-                    flex: 2,
-                    child: Card(
-                      child: Stack(
-                        children: [
-                          // the background board image
-                          Image.asset(
-                            'image/board/board_A.jpg',
-                            fit: BoxFit.none,
-                            alignment: Alignment.topLeft,
-                            width: double.infinity,
-                            height: double.infinity,
-                          ),
+            body: MysteryCardDialogWidget(
+              child: Row(
+                children: [
+                  // map
+                  Expanded(
+                      flex: 2,
+                      child: Card(
+                        child: Stack(
+                          children: [
+                            // the background board image
+                            Image.asset(
+                              'image/board/board_A.jpg',
+                              fit: BoxFit.none,
+                              alignment: Alignment.topLeft,
+                              width: double.infinity,
+                              height: double.infinity,
+                            ),
 
-                          ...party?.board.tiles
-                                  .map((tile) => _tile(context, tile, cube)) ??
-                              [],
-                        ],
+                            ...party?.board.tiles.map(
+                                    (tile) => _tile(context, tile, cube)) ??
+                                [],
+                          ],
+                        ),
+                      )),
+
+                  // players list
+                  Expanded(
+                    flex: 1,
+                    child: SingleChildScrollView(
+                      child: Container(
+                        color: Colors.red.withAlpha(50),
+                        child: Padding(
+                            padding: const EdgeInsets.all(40.0),
+                            child:
+                                Column(children: _listWidget(context, cube))),
                       ),
-                    )),
-
-                // players list
-                Expanded(
-                  flex: 1,
-                  child: SingleChildScrollView(
-                    child: Container(
-                      color: Colors.red.withAlpha(50),
-                      child: Padding(
-                          padding: const EdgeInsets.all(40.0),
-                          child: Column(children: _listWidget(context, cube))),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -219,5 +225,93 @@ class BoardPageCube extends Cube {
             ],
           );
         });
+  }
+}
+
+/// dialog box that show the picked mystery card
+/// when received event from server
+class MysteryCardDialogWidget extends CubeWidget<MysteryCardDialogWidgetCube> {
+  final Widget? child;
+
+  const MysteryCardDialogWidget({Key? key, this.child}) : super(key: key);
+
+  @override
+  Widget buildView(BuildContext context, MysteryCardDialogWidgetCube cube) {
+    return StreamBuilder<MysteryCardPickedEventAnimation?>(
+        stream: cube.mysteryCardStream,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return AlertDialog(
+              title: const Text('Mystery card'),
+              content: SingleChildScrollView(
+                child: SizedBox(
+                  width: context.widthScreen < 500
+                      ? context.widthScreen
+                      : context.widthScreen / 2,
+                  child: MysteryCardWidget(
+                      mysteryCard: snapshot.data!.mysteryCard,
+                      playerId: snapshot.data!.playerId),
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Close'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          } else {
+            return const SizedBox.shrink();
+          }
+        });
+  }
+}
+
+class MysteryCardDialogWidgetCube extends Cube {
+  final EventAnimationRepository eventRepository;
+
+  MysteryCardDialogWidgetCube(this.eventRepository);
+
+  Stream<MysteryCardPickedEventAnimation?> get mysteryCardStream =>
+      eventRepository.subStream<MysteryCardPickedEventAnimation>();
+}
+
+class MysteryCardWidget extends CubeWidget<MysteryCardWidgetCube> {
+  final MysteryCard mysteryCard;
+  final String playerId;
+
+  const MysteryCardWidget(
+      {Key? key, required this.mysteryCard, required this.playerId})
+      : super(key: key);
+
+  @override
+  Widget buildView(BuildContext context, MysteryCardWidgetCube cube) {
+    return Column(
+      children: [
+        ListTile(
+          title: Text('Player : ${cube.getPlayerName(playerId)}'),
+        ),
+        ListTile(
+          title: Text('Mystery card : ${mysteryCard.name}'),
+        ),
+        ListTile(
+          title: Text('Description : ${mysteryCard.description}'),
+        ),
+      ],
+    );
+  }
+}
+
+class MysteryCardWidgetCube extends Cube {
+  final PartyRepository partyRepository;
+
+  MysteryCardWidgetCube(this.partyRepository);
+
+  String getPlayerName(String playerId) {
+    return partyRepository.party.value!.players
+        .firstWhere((player) => player.id == playerId)
+        .name;
   }
 }

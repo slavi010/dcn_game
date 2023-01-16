@@ -6,8 +6,6 @@ import '../model/board/server_states.dart';
 Future<void> main() async {
   var app = Alfred();
 
-
-
   var etat = ServerEtat();
   // server side
   setUpServerRoutes(app, etat);
