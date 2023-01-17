@@ -1,6 +1,4 @@
 import 'package:cubes/cubes.dart';
-import 'package:dcn_game/model/repository/event_animation_repository.dart';
-import 'package:dcn_game/model/repository/party_repository.dart';
 import 'package:dcn_game/client/ui/board_page.dart';
 import 'package:dcn_game/client/ui/cant_find_the_party_page.dart';
 import 'package:dcn_game/client/ui/join_party_page.dart';
@@ -9,15 +7,16 @@ import 'package:dcn_game/client/ui/shop_vehicle_page.dart';
 import 'package:dcn_game/client/ui/waiting_for_players_page.dart';
 import 'package:dcn_game/client/ui/widget/my_widget.dart';
 import 'package:dcn_game/model/board/server_states.dart';
+import 'package:dcn_game/model/repository/event_animation_repository.dart';
+import 'package:dcn_game/model/repository/party_repository.dart';
 import 'package:dcn_game/server/api.dart';
-import 'package:flutter/material.dart';
-
 // ignore: depend_on_referenced_packages
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 
-import 'model/board/party.dart';
 import 'client/ui/admin_page.dart';
+import 'model/board/party.dart';
 
 void main() async {
   // load hive box

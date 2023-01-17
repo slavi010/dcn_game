@@ -1,8 +1,7 @@
 import 'package:cubes/cubes.dart';
-import 'package:dcn_game/model/repository/event_animation_repository.dart';
-
-import 'package:dcn_game/model/repository/party_repository.dart';
 import 'package:dcn_game/client/ui/widget/my_widget.dart';
+import 'package:dcn_game/model/repository/event_animation_repository.dart';
+import 'package:dcn_game/model/repository/party_repository.dart';
 import 'package:flutter/material.dart';
 
 import '../../model/board/board.dart';
@@ -114,50 +113,55 @@ class BoardPage extends CubeWidget<BoardPageCube> {
       left: tile.getCoord().x.toDouble() - 25,
       top: tile.getCoord().y.toDouble() - 25,
       child: InkWell(
-          onTap: () => cube.onTileClicked(tile),
-          child: SizedBox(
-            width: size,
-            height: size,
-            child: Stack(
-              children: [
-                // center
-                Positioned(
-                  left: size / 2 - sizeRect / 2,
-                  top: size / 2 - sizeRect / 2,
-                  child: SizedBox(
-                    width: 30,
-                    height: 30,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Colors.black26,
-                          width: 1,
-                        ),
-                        color: cube.getPossibleMoves().contains(tile)
-                            ? Colors.orange.withOpacity(0.3)
-                            : Colors.grey.withOpacity(0.2),
+        onTap: () => cube.onTileClicked(tile),
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Stack(
+            children: [
+              // center
+              Positioned(
+                left: size / 2 - sizeRect / 2,
+                top: size / 2 - sizeRect / 2,
+                child: SizedBox(
+                  width: 30,
+                  height: 30,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors.black26,
+                        width: 1,
                       ),
-                      child: Text(
-                        // "${cube.partyRepository.party.value!.players.where((player) => player.currentTile?.id == tile.id).map((player) => player.name).join('\n')}"
-                        "\n${tile.getPOIs().map((poi) => poi.poiName).join('\n')}",
-                        maxLines: 5,
-                        style: const TextStyle(fontSize: 10),
-                      ),
+                      color: cube.getPossibleMoves().contains(tile)
+                          ? Colors.orange.withOpacity(0.3)
+                          : cube.partyRepository.party.value?.reachableTiles
+                                      .contains(tile) ??
+                                  false
+                              ? Colors.green.withOpacity(0.3)
+                              : Colors.transparent,
+                    ),
+                    child: Text(
+                      // "${cube.partyRepository.party.value!.players.where((player) => player.currentTile?.id == tile.id).map((player) => player.name).join('\n')}"
+                      "\n${tile.getPOIs().map((poi) => poi.poiName).join('\n')}",
+                      maxLines: 5,
+                      style: const TextStyle(fontSize: 10),
                     ),
                   ),
                 ),
-                Positioned.fill(
-                  child: PlayerPositionWidget(
-                    tile: tile,
-                    players: cube.partyRepository.party.value!.players
-                        .where((player) => player.currentTile?.id == tile.id)
-                        .toList(),
-                    size: size,
-                  ),
+              ),
+              Positioned.fill(
+                child: PlayerPositionWidget(
+                  tile: tile,
+                  players: cube.partyRepository.party.value!.players
+                      .where((player) => player.currentTile?.id == tile.id)
+                      .toList(),
+                  size: size,
                 ),
-              ],
-            ),
-          )),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -237,45 +241,63 @@ class MysteryCardDialogWidget extends CubeWidget<MysteryCardDialogWidgetCube> {
 
   @override
   Widget buildView(BuildContext context, MysteryCardDialogWidgetCube cube) {
-    return StreamBuilder<MysteryCardPickedEventAnimation?>(
-        stream: cube.mysteryCardStream,
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            return AlertDialog(
-              title: const Text('Mystery card'),
-              content: SingleChildScrollView(
-                child: SizedBox(
-                  width: context.widthScreen < 500
-                      ? context.widthScreen
-                      : context.widthScreen / 2,
-                  child: MysteryCardWidget(
-                      mysteryCard: snapshot.data!.mysteryCard,
-                      playerId: snapshot.data!.playerId),
-                ),
-              ),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text('Close'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          } else {
-            return const SizedBox.shrink();
-          }
-        });
+    // listen to the global event animation
+    return cube.eventRepository.lastEventAnimation
+        .build<EventAnimation?>((event) {
+      if (event is MysteryCardPickedEventAnimation &&
+          event.id != cube.lastMysteryCardEventAnimationId) {
+        // update the observable value
+        cube.lastMysteryCardEventAnimationId = event.id;
+        cube.mysteryCardObs.update(event);
+      }
+
+      // listen to the mystery card event observable
+      return cube.mysteryCardObs.build<MysteryCardPickedEventAnimation?>(
+        (mysteryCardEvent) => Stack(
+          children: [
+            child ?? const SizedBox(),
+
+            // show the dialog box
+            mysteryCardEvent != null
+                ? AlertDialog(
+                    title: const Text('Mystery card'),
+                    content: SingleChildScrollView(
+                      child: SizedBox(
+                        width: context.widthScreen < 500
+                            ? context.widthScreen
+                            : context.widthScreen / 2,
+                        child: MysteryCardWidget(
+                            mysteryCard: mysteryCardEvent.mysteryCard,
+                            playerId: mysteryCardEvent.playerId),
+                      ),
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        child: const Text('Close'),
+                        onPressed: () {
+                          // close the dialog box
+                          cube.mysteryCardObs.update(null);
+                        },
+                      ),
+                    ],
+                  )
+                : const SizedBox(),
+          ],
+        ),
+      );
+    });
   }
 }
 
 class MysteryCardDialogWidgetCube extends Cube {
   final EventAnimationRepository eventRepository;
 
-  MysteryCardDialogWidgetCube(this.eventRepository);
+  final mysteryCardObs =
+      ObservableValue<MysteryCardPickedEventAnimation?>(value: null);
 
-  Stream<MysteryCardPickedEventAnimation?> get mysteryCardStream =>
-      eventRepository.subStream<MysteryCardPickedEventAnimation>();
+  String lastMysteryCardEventAnimationId = '';
+
+  MysteryCardDialogWidgetCube(this.eventRepository);
 }
 
 class MysteryCardWidget extends CubeWidget<MysteryCardWidgetCube> {

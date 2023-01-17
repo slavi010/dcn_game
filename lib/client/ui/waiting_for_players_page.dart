@@ -2,7 +2,6 @@ import 'package:cubes/cubes.dart';
 import 'package:dcn_game/client/ui/widget/my_widget.dart';
 import 'package:flutter/material.dart';
 
-import '../../model/board/party.dart';
 import '../../model/repository/party_repository.dart';
 
 class WaitingForPlayersPage extends CubeWidget<WaitingForPlayersPageCube> {

@@ -346,6 +346,9 @@ class NewPlayerServerState extends ServerState {
       etat.state = GameOverServerState(etat);
     }
 
+    // update mystery cards timer for skipped players
+    etat.party.currentPlayer?.updateRoundTimedMysteryCard(etat.party);
+
     // choose the next player
     if (etat.party.eor) {
       // take the next player remaining
@@ -368,7 +371,7 @@ class NewPlayerServerState extends ServerState {
       do {
         // skip the player turn
         if (cpt > 0) {
-          // update mystery cards timer
+          // update mystery cards timer for skipped players
           etat.party.players[currentIndex]
               .updateRoundTimedMysteryCard(etat.party);
         }
@@ -447,14 +450,10 @@ class MovePlayerServerState extends ServerState {
     final currentPlayer = etat.party.currentPlayer!;
     var endOfTurn = currentPlayer.autonomy <= 0;
 
-    // get the bard action of the tile
-    var boardActions = currentPlayer.currentTile!.onPass();
-    if (endOfTurn) {
-      boardActions += currentPlayer.currentTile!.onStop();
-    }
-
     // perform the board action and if its end of turn, end the turn
-    if (performBoardAction(boardActions) || endOfTurn) {
+    if (endOfTurn) {
+      // perform onStop action of the tile
+      performBoardAction(currentPlayer.currentTile!.onStop());
       etat.state = NewPlayerServerState(etat);
       return;
     }
@@ -463,12 +462,14 @@ class MovePlayerServerState extends ServerState {
     // if hitting a branch
     final BTile previousTile = currentPlayer.currentTile!;
 
+    final BTile nextTile = etat.party.board.getTile(idTile);
+
     // move the player
     etat.party.addAction(PartyAction.movePlayer(
         currentPlayer.id,
         idTile,
         currentPlayer.autonomy -
-            1 / previousTile.getSpeed() * currentPlayer.cardSpeedModifier()));
+            nextTile.cost(currentPlayer.cardSpeedModifier())));
 
     // check if the player is on the target
     if (currentPlayer.currentTile!.id == currentPlayer.goalPOI!.id) {
@@ -495,6 +496,14 @@ class MovePlayerServerState extends ServerState {
                 .firstWhere((element) => element.containsWarehouse())
                 .id));
       }
+    }
+
+    // perform board action on passing on the tile
+    final stopTheTurn = performBoardAction(currentPlayer.currentTile!.onPass());
+    if (stopTheTurn) {
+      // set autonomy to 0 to prevent the player to move
+      etat.party
+          .addAction(PartyAction.updateVehicleAutonomy(currentPlayer.id, 0));
     }
 
     // check if hitting a branch

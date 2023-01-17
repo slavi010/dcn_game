@@ -1,7 +1,6 @@
 import 'package:dcn_game/model/board/mystery_card.dart';
 import 'package:dcn_game/model/board/server_states.dart';
 import 'package:dcn_game/model/event_animation.dart';
-import 'package:dcn_game/model/repository/event_animation_repository.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -65,9 +64,6 @@ abstract class PartyAction {
 
   /// the action to perform
   void perform(Party party) => {};
-
-  /// The specific action to perform only on the client side
-  void performClientSide(Party party, EventAnimationRepository eventAnimationRepository) => {};
 
   /// Add a player to the party
   factory PartyAction.newPlayer(String idPlayer, String name) {
@@ -147,7 +143,7 @@ abstract class PartyAction {
   /// Update the player's mysteries cards
   factory PartyAction.updatePlayerMysteryCards(
       String idPlayer, List<MysteryCard> cards) {
-    return PartyAction.updatePlayerMysteryCards(idPlayer, cards);
+    return UpdatePlayerCardsAction(idPlayer, cards);
   }
 
   /// Launch an event animation
@@ -567,11 +563,6 @@ class EventAnimationAction extends PartyAction {
         EventAnimation.fromJson(
             json["payload"]["event_animation"] as Map<String, dynamic>),
         idAction: json["id_action"] as String);
-  }
-
-  @override
-  void performClientSide(Party party, EventAnimationRepository eventAnimationRepository) {
-    eventAnimationRepository.addEventAnimation(eventAnimation);
   }
 }
 

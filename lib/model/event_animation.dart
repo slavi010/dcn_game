@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 import 'board/mystery_card.dart';
 
@@ -6,11 +7,18 @@ part 'event_animation.g.dart';
 
 /// Represent an event animation action to be performed by the client
 abstract class EventAnimation {
+  /// The id of the event animation
+  late String id;
+
   /// The type of the event animation
   String get type;
 
   /// The json constructor
-  EventAnimation();
+  EventAnimation({this.id = ''}) {
+    if (id.isEmpty) {
+      id = const Uuid().v4();
+    }
+  }
 
   /// The json factory
   factory EventAnimation.fromJson(Map<String, dynamic> json) {
@@ -24,7 +32,10 @@ abstract class EventAnimation {
   }
 
   /// The json to map method
-  Map<String, dynamic> toJson();
+  Map<String, dynamic> toJson() => {
+        "id": id,
+        "type": type,
+      };
 
   /// Draw a mystery card
   factory EventAnimation.mysteryCardPicked(MysteryCard mysteryCard,
@@ -55,5 +66,5 @@ class MysteryCardPickedEventAnimation extends EventAnimation {
 
   @override
   Map<String, dynamic> toJson() =>
-      _$MysteryCardPickedEventAnimationToJson(this);
+      super.toJson()..addAll(_$MysteryCardPickedEventAnimationToJson(this));
 }

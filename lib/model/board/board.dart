@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:dcn_game/model/board/party.dart';
-import 'package:json_annotation/json_annotation.dart';
 
 import 'mystery_card.dart';
 import 'party_action.dart';
@@ -52,10 +51,57 @@ class Board {
       print("Error while decorating tile $id");
     }
   }
+
+  /// Get all tiles that are reachable from a tile (with a given number of moves)
+  ///
+  /// Use dijkstra algorithm
+  ///
+  /// player: used to know if he can go through a tile
+  ///
+  List<BTile> getReachableTiles(BTile tile, Player player) {
+    var moves = player.autonomy;
+    var speedFactorMoves = player.cardSpeedModifier();
+
+    var toVisit = <BTile>[tile];
+    var visited = <BTile, double>{tile: moves};
+
+    while (toVisit.isNotEmpty) {
+      var current = toVisit.removeAt(0);
+      var currentMoves = visited[current]!;
+
+      toVisit.remove(current);
+
+      if (currentMoves > 0) {
+        for (BTile next in current.possibleNexts(
+          player,
+          moves: currentMoves,
+          speedFactorModifier: speedFactorMoves,
+        )) {
+          // the autonomy after the move
+          var nextMoves = currentMoves - next.cost(speedFactorMoves);
+
+          // if the tile is not visited or if the autonomy is better
+          if (!visited.containsKey(next) || visited[next]! < nextMoves) {
+            visited[next] = nextMoves;
+            toVisit += [next];
+          }
+        }
+      }
+    }
+
+    return visited.keys.toList();
+  }
+
+  /// Get the tile from the id
+  ///
+  /// Raise an exception if the tile is not found
+  BTile getTile(String idTile) {
+    return tiles.firstWhere((element) => element.id == idTile);
+  }
 }
 
 abstract class BTile {
-  /// get the next possible tiles to move to
+  /// Get the next possible tiles to move to
   List<BTile> get nexts;
 
   /// Actions when the vehicle stop on this tile
@@ -64,39 +110,50 @@ abstract class BTile {
   /// Actions when the vehicle pass the tile
   List<BoardAction> onPass();
 
-  /// return the speed factor
+  /// Return the speed factor
   /// 1.0 is the normal speed
   /// 0.5 mean need 2x more time to pass
   /// 2.0 mean need 2x less time to pass
   double getSpeed();
 
-  /// if the vehicle can move on this tile
+  /// If the vehicle can move on this tile
   bool canPass(Vehicle vehicle);
 
-  /// all nexts where the vehicle can move
+  /// All nexts where the vehicle can move
   /// - canPass is true
   /// - have enough autonomy
-  List<BTile> possibleNexts(Player player) {
+  ///
+  /// moves: if is not null, use it to calculate the autonomy,
+  /// otherwise use the player's autonomy.
+  ///
+  /// speedFactorModifier: if is not null, use it to calculate the
+  /// speed factor of the player, otherwise use the player's speed factor.
+  List<BTile> possibleNexts(
+    Player player, {
+    double? moves,
+    double? speedFactorModifier,
+  }) {
     if (player.vehicle == null) {
       return [];
     }
     return nexts
         .where((tile) =>
             tile.canPass(player.vehicle!) &&
-            1 / tile.getSpeed() * player.cardSpeedModifier() <= player.autonomy)
+            tile.cost(speedFactorModifier ?? player.cardSpeedModifier()) <=
+                (moves ?? player.autonomy))
         .toList();
   }
 
-  /// the coord (pixel) of the tile
+  /// The coord (pixel) of the tile
   TileCoord getCoord();
 
-  /// return the id of the tile
+  /// Return the id of the tile
   String get id;
 
-  /// return all the POIs of the tile
+  /// Return all the POIs of the tile
   List<POIBTile> getPOIs();
 
-  /// add a new DecoratorBTile to the tile
+  /// Add a new DecoratorBTile to the tile
   void addDecorator(DecoratorBTile decorator);
 
   /// check the type is in the chain
@@ -108,6 +165,13 @@ abstract class BTile {
   /// add a new connection to a tile (one way)
   void addConnection(BTile tile) {
     nexts.add(tile);
+  }
+
+  /// Cost to move on this tile
+  ///
+  /// speedFactorModifier: 0.5 mean need 2x more time to pass
+  double cost(double speedFactorModifier) {
+    return 1 / getSpeed() / speedFactorModifier;
   }
 }
 
@@ -757,8 +821,30 @@ class Player {
     return party.players.map((p) => p.id).toList().lastIndexOf(id);
   }
 
+  /// Give the modified speed of the player for the next move
   double cardSpeedModifier() {
     return mysteryCards.fold(1.0, (p, m) => p * m.speedFactor);
+  }
+
+  /// Give the list of all future modified speed by move
+  ///
+  /// Example:
+  /// [0.5, 0.5, 2]
+  /// means that the player will move 2 times with a speed of 0.5 and 1 time with a speed of 2
+  ///
+  /// If the move is not specified, default is 1
+  List<double> cardSpeedModifiers({int maxMove = 30}) {
+    final list = <double>[];
+    for (var i = 0; i < maxMove; i++) {
+      double speed = 1.0;
+      for (var card in mysteryCards) {
+        if (card is! RoundTimedMysteryCard || card.duration >= i) {
+          speed *= card.speedFactor;
+        }
+      }
+      list.add(speed);
+    }
+    return list;
   }
 
   /// perform the RoundTimedMysteryCard action (subtract 1 round to the timer)
