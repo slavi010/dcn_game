@@ -313,13 +313,13 @@ class MysteryCardWidget extends CubeWidget<MysteryCardWidgetCube> {
     return Column(
       children: [
         ListTile(
-          title: Text('Player : ${cube.getPlayerName(playerId)}'),
+          title: Text('${cube.getPlayerName(playerId)} has picked a card ! '),
+        ),
+        Center(
+          child: Text(mysteryCard.name),
         ),
         ListTile(
-          title: Text('Mystery card : ${mysteryCard.name}'),
-        ),
-        ListTile(
-          title: Text('Description : ${mysteryCard.description}'),
+          title: Text(mysteryCard.description),
         ),
       ],
     );
