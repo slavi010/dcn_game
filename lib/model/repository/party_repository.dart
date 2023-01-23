@@ -39,7 +39,7 @@ class PartyRepository {
     load();
 
     // update the party every X seconds
-    Timer.periodic(const Duration(seconds: 1), (_) => updateParty());
+    Timer.periodic(const Duration(seconds: 2), (_) => updateParty());
   }
 
   /// Save the party id and this player id in Hive

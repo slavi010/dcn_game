@@ -10,9 +10,11 @@ import 'package:dcn_game/model/board/server_states.dart';
 import 'package:dcn_game/model/repository/event_animation_repository.dart';
 import 'package:dcn_game/model/repository/party_repository.dart';
 import 'package:dcn_game/server/api.dart';
+
 // ignore: depend_on_referenced_packages
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:glassmorphism_widgets/glassmorphism_widgets.dart';
 import 'package:hive/hive.dart';
 
 import 'client/ui/admin_page.dart';
@@ -28,8 +30,7 @@ void main() async {
   // dio.interceptors.add(LogInterceptor(responseBody: true, responseHeader: true, requestBody: true, requestHeader: true));
   // dio.options.contentType = Headers.jsonContentType;
   Cubes.registerSingleton<PartyRepository>(PartyRepository(RestClient(dio)));
-  Cubes.registerSingleton<EventAnimationRepository>(
-      EventAnimationRepository());
+  Cubes.registerSingleton<EventAnimationRepository>(EventAnimationRepository());
 
   // register cubes
   Cubes.registerFactory<JoinPartyPageCube>((i) => JoinPartyPageCube());
@@ -52,6 +53,8 @@ void main() async {
       (i) => MysteryCardDialogWidgetCube(i.get()));
   Cubes.registerFactory<MysteryCardWidgetCube>(
       (i) => MysteryCardWidgetCube(i.get()));
+  Cubes.registerFactory<UIBoardPageCube>(
+      (i) => UIBoardPageCube(i.get()));
 
   runApp(const MyApp());
 }
@@ -62,16 +65,57 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+    return GlassApp(
+      theme: GlassThemeData(
+        blur: 10,
+        borderGradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.2),
+            Colors.grey.withOpacity(0.1),
+          ],
+        ),
       ),
-      home: Scaffold(body: MyHomePage()),
-      // path
-      routes: {
-        '/admin': (context) => const AdminPage(),
-      },
+      home: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          primarySwatch: Colors.brown,
+          // dark mode
+          brightness: Brightness.dark,
+        ),
+        home: Scaffold(
+          body: _buildBackground(
+            context,
+            MyHomePage(),
+          ),
+        ),
+        // path
+        routes: {
+          '/admin': (context) => const AdminPage(),
+        },
+      ),
+    );
+  }
+
+  /// Add a gradient to the background
+  Widget _buildBackground(BuildContext context, Widget child) {
+    return Stack(
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.pink,
+                Colors.orange,
+              ],
+            ),
+          ),
+        ),
+        child,
+      ],
     );
   }
 }

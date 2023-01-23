@@ -47,6 +47,9 @@ dependencies:
 
   # UI library
   card_swiper: ^2.0.4
+  glassmorphism_widgets: ^0.1.4
+  zoom_widget: ^2.0.0
+  simple_animations: ^5.0.0+3
 
 
   # for serialization

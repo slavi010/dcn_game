@@ -212,6 +212,11 @@ class WaitingForPlayerServerState extends ServerState {
 
   @override
   void newPlayer(String id, String name) {
+    // check if the name is not already used
+    if (etat.party.players.any((p) => p.name == name)) {
+      return;
+    }
+
     etat.party.addAction(PartyAction.newPlayer(id, name));
   }
 
@@ -270,7 +275,15 @@ class NewRoundServerState extends ServerState {
     // disable End of Round
     etat.party.addAction(PartyAction.updateEOR(false, []));
 
-    etat.state = ChooseVehicleServerState(etat);
+    // etat.state = ChooseVehicleServerState(etat);
+
+    // Give to to all players a bike
+    for (final player in etat.party.players) {
+      etat.party.addAction(
+          PartyAction.buyVehicle(player, 'b', true, spendPoints: false));
+    }
+
+    etat.state = NewPlayerServerState(etat);
   }
 }
 

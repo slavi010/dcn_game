@@ -126,6 +126,10 @@ void setUpServerRoutes(Alfred app, ServerEtat etat) {
     try {
       var name = req.params["name"];
       final id = const Uuid().v4();
+      if (name == null || name.length > 10) {
+        throw AlfredException(400, {'message': 'Invalid name'});
+      }
+
       etat.newPlayer(id, name);
       res.json(IdResponse(id));
     } catch (e) {

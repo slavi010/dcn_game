@@ -84,14 +84,16 @@ abstract class PartyAction {
 
   /// Buy a vehicle for a player
   factory PartyAction.buyVehicle(
-      Player player, String typeVehicle, bool isCurrent) {
+      Player player, String typeVehicle, bool isCurrent,
+      {bool spendPoints = true}) {
     return SetPlayerAction(
         id: player.id,
         vehicleType: isCurrent ? typeVehicle : null,
         vehicleTypes:
             (player.vehicles.map((v) => v.type).toList()) + [typeVehicle],
-        points:
-            player.points - Vehicle.fromType(type: typeVehicle).getBuyCost());
+        points: spendPoints
+            ? player.points - Vehicle.fromType(type: typeVehicle).getBuyCost()
+            : null);
   }
 
   /// Sell a vehicle for a player
@@ -542,7 +544,6 @@ class UpdatePlayerCardsAction extends PartyAction {
   }
 }
 
-
 /// Event animation
 class EventAnimationAction extends PartyAction {
   @override
@@ -565,4 +566,3 @@ class EventAnimationAction extends PartyAction {
         idAction: json["id_action"] as String);
   }
 }
-

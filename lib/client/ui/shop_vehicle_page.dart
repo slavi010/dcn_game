@@ -64,10 +64,6 @@ class ShopVehiclePage extends CubeWidget<ShopVehiclePageCube> {
 
                   // button ready
                   ReadyButton(
-                    style: ButtonStyle(
-                        backgroundColor: cube.canUserReadyButton
-                            ? null
-                            : const MaterialStatePropertyAll(Colors.grey)),
                     disabled: !cube.canUserReadyButton,
                     onTapButDisabled: () => context.showSnackBar(
                       const SnackBar(

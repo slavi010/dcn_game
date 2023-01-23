@@ -14,6 +14,9 @@ import 'party_action.dart';
 /// - all tiles
 /// - all POIs (Points of Interest)
 class Board {
+  /// Default board id
+  static const String defaultBoard = 'default';
+
   /// list of all tiles
   List<BTile> tiles = [];
 
