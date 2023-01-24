@@ -21,7 +21,7 @@ Online multiplayer board game eco4 for Vectura System during Disrupt's Compus Na
 
 ## Code source author
 
-- [Sviatoslav BESNARD](https://slavi.dev)
+- [Sviatoslav BESNARD](https://slavi.dev) (last edit: january 2023)
 
 # Developer's guide
 
@@ -57,10 +57,11 @@ Some files are shared between the client and the server:
 The most difficult when I developed this project is to handle the synchronization
 between all the players and the server.
 To do so, I used a simple but efficient: the server is THE SOURCE OF TRUTH.
-He contains a stack of history of all the actions (cf `PartyAction`) that happened in the game.
+It contains a stack of history of all the actions (cf `PartyAction`) that happened in the game.
 When a player join the game, he receives the whole history and can replay it
 to have the same state of data as the other players.
-This data are mainly in the file `lib/models/board/party.dart`.
+This data are mainly in the files `lib/models/board/party.dart` 
+and `lib/models/board/board.dart`.
 
 So, all modifications of the data must be done via this process to be correctly
 synchronized!
@@ -79,15 +80,15 @@ The `Party` and the `ServerEtat` are the most important ones.
 The board contains all the board's tiles.
 
 The tiles `BTile` follow the decorator pattern.
-Each tile must is composed at least of a `SimpleBTile` and `TopDecoratorBTile`.
+Each tile must be composed by at least of a `SimpleBTile` and `TopDecoratorBTile`.
 Each other decorator must be added in between them.
 
 ![Board and tiles](./readme_images/btile_class_diagram.png)
 
-Example of a chained BTile that for a 'tile'
+Example of a chained BTile that for a tile.
 ![Board and tiles](./readme_images/exemple_chaining_btile.png)
 
-Moreover, each tile can be linked with other tiles to for the actual board.
+Moreover, each tile can be linked with other tiles to create the actual board.
 
 ### Structure: The ServerEtat
 
@@ -125,8 +126,8 @@ can handle polymorphism. So, if you want to refactor the serialization, you can 
 I hastily implemented the option party.
 So you can directly modify the file `/assets/image/option_party.json` to change the option of the party.
 
-I not really sure if I will had each time to finish this feature and specially to handle
-all the option in the `server_states.dart` file.
+I not really sure if I will had the time to finish this feature and specially to handle
+all the options in the `server_states.dart` file.
 
 ## Client side
 
@@ -164,5 +165,6 @@ These are some things that you can do to improve this project:
 - Get a bit of rest, you deserve it!
 - Improve the server_state and consolidate the logic
 - Add some more * (yes, again)
+- Accept multiple Party at the same time
 
 Good luck and have fun!
