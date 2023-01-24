@@ -1,4 +1,6 @@
+import 'package:dcn_game/model/board/mystery_card.dart';
 import 'package:dcn_game/model/board/server_states.dart';
+import 'package:dcn_game/model/event_animation.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -45,6 +47,10 @@ abstract class PartyAction {
         return UpdateEORAction.fromJson(json);
       case "update_server_state":
         return UpdateServerStateAction.fromJson(json);
+      case "update_player_cards":
+        return UpdatePlayerCardsAction.fromJson(json);
+      case "event_animation":
+        return EventAnimationAction.fromJson(json);
       default:
         throw Exception("Unknown type of PartyAction: ${json["type"]}, "
             "did you forget to add it in the factory?");
@@ -57,7 +63,7 @@ abstract class PartyAction {
   }
 
   /// the action to perform
-  void perform(Party party);
+  void perform(Party party) => {};
 
   /// Add a player to the party
   factory PartyAction.newPlayer(String idPlayer, String name) {
@@ -78,14 +84,16 @@ abstract class PartyAction {
 
   /// Buy a vehicle for a player
   factory PartyAction.buyVehicle(
-      Player player, String typeVehicle, bool isCurrent) {
+      Player player, String typeVehicle, bool isCurrent,
+      {bool spendPoints = true}) {
     return SetPlayerAction(
         id: player.id,
         vehicleType: isCurrent ? typeVehicle : null,
         vehicleTypes:
             (player.vehicles.map((v) => v.type).toList()) + [typeVehicle],
-        points:
-            player.points - Vehicle.fromType(type: typeVehicle).getBuyCost());
+        points: spendPoints
+            ? player.points - Vehicle.fromType(type: typeVehicle).getBuyCost()
+            : null);
   }
 
   /// Sell a vehicle for a player
@@ -132,6 +140,17 @@ abstract class PartyAction {
   /// updateVehicleAutonomy (player, vehicle,
   factory PartyAction.updateVehicleAutonomy(String idPlayer, double autonomy) {
     return SetPlayerAction(id: idPlayer, autonomy: autonomy);
+  }
+
+  /// Update the player's mysteries cards
+  factory PartyAction.updatePlayerMysteryCards(
+      String idPlayer, List<MysteryCard> cards) {
+    return UpdatePlayerCardsAction(idPlayer, cards);
+  }
+
+  /// Launch an event animation
+  factory PartyAction.eventAnimation(EventAnimation eventAnimation) {
+    return EventAnimationAction(eventAnimation);
   }
 }
 
@@ -185,8 +204,6 @@ class SetPlayerAction extends PartyAction {
 
   String? idCurrentTile;
 
-  int? stuckTurns;
-
   bool? ready;
 
   bool? out;
@@ -202,7 +219,6 @@ class SetPlayerAction extends PartyAction {
       this.vehicleTypes,
       this.idGoalPOI,
       this.idCurrentTile,
-      this.stuckTurns,
       this.ready,
       this.out,
       this.points,
@@ -219,7 +235,6 @@ class SetPlayerAction extends PartyAction {
         "vehicleTypes": vehicleTypes,
         "idGoalPOI": idGoalPOI,
         "idCurrentTile": idCurrentTile,
-        "stuckTurns": stuckTurns,
         "ready": ready,
         "out": out,
         "points": points,
@@ -237,7 +252,6 @@ class SetPlayerAction extends PartyAction {
             .toList(),
         idGoalPOI: json["payload"]["idGoalPOI"] as String?,
         idCurrentTile: json["payload"]["idCurrentTile"] as String?,
-        stuckTurns: json["payload"]["stuckTurns"] as int?,
         ready: json["payload"]["ready"] as bool?,
         out: json["payload"]["out"] as bool?,
         idAction: json["id_action"] as String,
@@ -272,9 +286,6 @@ class SetPlayerAction extends PartyAction {
     if (idCurrentTile != null) {
       player.currentTile = party.board.tiles
           .firstWhere((element) => element.id == idCurrentTile);
-    }
-    if (stuckTurns != null) {
-      player.stuckTurns = stuckTurns!;
     }
     if (ready != null) {
       player.ready = ready!;
@@ -498,5 +509,60 @@ class UpdateServerStateAction extends PartyAction {
   @override
   void perform(Party party) {
     party.serverState = serverState;
+  }
+}
+
+/// Update Player Cards
+class UpdatePlayerCardsAction extends PartyAction {
+  @override
+  String get type => "update_player_cards";
+
+  String id;
+
+  List<MysteryCard> mysteryCards;
+
+  UpdatePlayerCardsAction(this.id, this.mysteryCards, {String idAction = ''})
+      : super(idAction: idAction);
+
+  @override
+  Map<String, dynamic> get payload =>
+      {"id": id, "mystery_cards": mysteryCards.map((e) => e.toJson()).toList()};
+
+  factory UpdatePlayerCardsAction.fromJson(Map<String, dynamic> json) {
+    return UpdatePlayerCardsAction(
+        json["payload"]["id"] as String,
+        (json["payload"]["mystery_cards"] as List<dynamic>)
+            .map((e) => MysteryCard.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        idAction: json["id_action"] as String);
+  }
+
+  @override
+  void perform(Party party) {
+    var player = party.players.firstWhere((element) => element.id == id);
+    player.mysteryCards = mysteryCards;
+  }
+}
+
+/// Event animation
+class EventAnimationAction extends PartyAction {
+  @override
+  String get type => "event_animation";
+
+  final EventAnimation eventAnimation;
+
+  EventAnimationAction(this.eventAnimation, {String idAction = ''})
+      : super(idAction: idAction);
+
+  @override
+  Map<String, dynamic> get payload => {
+        "event_animation": eventAnimation.toJson(),
+      };
+
+  factory EventAnimationAction.fromJson(Map<String, dynamic> json) {
+    return EventAnimationAction(
+        EventAnimation.fromJson(
+            json["payload"]["event_animation"] as Map<String, dynamic>),
+        idAction: json["id_action"] as String);
   }
 }

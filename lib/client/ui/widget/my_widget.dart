@@ -1,9 +1,11 @@
 import 'package:cubes/cubes.dart';
+import 'package:dcn_game/client/ui/widget/glass_custom.dart';
 import 'package:dcn_game/model/board/board.dart';
 import 'package:flutter/material.dart';
+import 'package:glassmorphism_widgets/glassmorphism_widgets.dart';
 
 import '../../../model/board/party.dart';
-import '../../party_repository.dart';
+import '../../../model/repository/party_repository.dart';
 
 class ListPlayerWidget extends CubeWidget<ListPlayerWidgetCube> {
   const ListPlayerWidget({Key? key}) : super(key: key);
@@ -44,8 +46,6 @@ class ListPlayerWidgetCube extends Cube {
 /// "I'm ready" button is displayed if the player is not ready
 /// "I'm no more ready" button is displayed if the player is ready
 class ReadyButton extends CubeWidget<ReadyButtonCube> {
-  final ButtonStyle? style;
-
   /// Disable the interaction with the button
   final bool disabled;
 
@@ -53,7 +53,6 @@ class ReadyButton extends CubeWidget<ReadyButtonCube> {
   final void Function()? onTapButDisabled;
 
   const ReadyButton({
-    this.style,
     this.disabled = false,
     this.onTapButDisabled,
     Key? key,
@@ -62,8 +61,15 @@ class ReadyButton extends CubeWidget<ReadyButtonCube> {
   @override
   Widget buildView(BuildContext context, ReadyButtonCube cube) {
     return cube.partyRepository.party.build<Party?>(
-      (party) => ElevatedButton(
-        style: style,
+      (party) => CustomGlassButton(
+        borderGradient: disabled
+            ? const LinearGradient(
+                colors: [
+                  Colors.grey,
+                  Colors.grey,
+                ],
+              )
+            : null,
         onPressed: () => !disabled
             ? cube.onReadyClicked()
             : onTapButDisabled != null
@@ -101,42 +107,68 @@ class ReadyButtonCube extends Cube {
 /// - Environment
 /// - Performance
 class PointCardWidget extends StatelessWidget {
-  final PointCard points;
+  final PointCard? points;
 
   /// The direction of the list of points
   final Axis direction;
 
+  final Color? positiveColor;
+  final Color? negativeColor;
+
+  /// Reverse positive and negative values
+  final bool reverseValues;
+
   const PointCardWidget(
-      {Key? key, required this.points, this.direction = Axis.horizontal})
+      {Key? key,
+      required this.points,
+      this.direction = Axis.horizontal,
+      this.positiveColor,
+      this.negativeColor,
+      this.reverseValues = false})
       : super(key: key);
 
   Widget buildItem(String label, IconData icon, int value) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon),
-        Text(value.toString()),
-      ],
+    final int modifiedValue = reverseValues ? -value : value;
+
+    return Tooltip(
+      message: label,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon),
+          Text(
+            modifiedValue.toString(),
+            style: TextStyle(
+                color: modifiedValue > 0 ? positiveColor : negativeColor),
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (points == null) {
+      return const GlassText(
+        'ERROR: points is null',
+      );
+    }
+
     return direction == Axis.horizontal
         ? Wrap(
             children: [
-              buildItem('Money', Icons.attach_money, points.money),
-              buildItem('Energy', Icons.flash_on, points.energy),
-              buildItem('Environment', Icons.nature, points.environment),
-              buildItem('Performance', Icons.trending_up, points.performance),
+              buildItem('Money', Icons.attach_money, points!.money),
+              buildItem('Energy', Icons.flash_on, points!.energy),
+              buildItem('Environment', Icons.nature, points!.environment),
+              buildItem('Performance', Icons.trending_up, points!.performance),
             ],
           )
         : Column(
             children: [
-              buildItem('Money', Icons.attach_money, points.money),
-              buildItem('Energy', Icons.flash_on, points.energy),
-              buildItem('Environment', Icons.nature, points.environment),
-              buildItem('Performance', Icons.trending_up, points.performance),
+              buildItem('Money', Icons.attach_money, points!.money),
+              buildItem('Energy', Icons.flash_on, points!.energy),
+              buildItem('Environment', Icons.nature, points!.environment),
+              buildItem('Performance', Icons.trending_up, points!.performance),
             ],
           );
   }

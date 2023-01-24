@@ -1,21 +1,22 @@
 import 'package:cubes/cubes.dart';
-import 'package:dcn_game/client/party_repository.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:dcn_game/model/repository/party_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
+import 'package:glassmorphism_widgets/glassmorphism_widgets.dart';
+
+import 'widget/glass_custom.dart';
 
 class JoinPartyPage extends CubeWidget<JoinPartyPageCube> {
   @override
   Widget buildView(BuildContext context, JoinPartyPageCube cube) {
     return Center(
       child: SingleChildScrollView(
-        child: Card(
+        child: ShadowGlassContainer(
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Form(
               child: Column(
                 children: [
-                  Text('Join the party !', style: context.textTheme.headline5),
+                  CustomGlassText('Join the party !', style: context.textTheme.headline5),
 
                   const SizedBox(height: 40),
                   SizedBox(
@@ -31,13 +32,13 @@ class JoinPartyPage extends CubeWidget<JoinPartyPageCube> {
                   const SizedBox(height: 40),
 
                   // validate button
-                  ElevatedButton(
+                  CustomGlassButton (
                     onPressed: cube.validateForm,
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 40, vertical: 28),
-                    ),
-                    child: const Text('Validate'),
+                    // style: OutlinedButton.styleFrom(
+                    //   padding: const EdgeInsets.symmetric(
+                    //       horizontal: 40, vertical: 28),
+                    // ),
+                    child: const CustomGlassText('Validate'),
                   ),
                 ],
               ),

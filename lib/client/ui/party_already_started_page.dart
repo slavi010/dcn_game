@@ -3,7 +3,7 @@
 import 'package:cubes/cubes.dart';
 import 'package:flutter/material.dart';
 
-import '../party_repository.dart';
+import '../../model/repository/party_repository.dart';
 
 class PartyAlreadyStartedPage extends CubeWidget<PartyAlreadyStartedPageCube> {
   const PartyAlreadyStartedPage({super.key});

@@ -1,9 +1,8 @@
 import 'dart:math';
 
-import 'package:retrofit/retrofit.dart';
-import 'package:dio/dio.dart';
-
 import 'package:alfred/alfred.dart';
+import 'package:dio/dio.dart';
+import 'package:retrofit/retrofit.dart';
 import 'package:uuid/uuid.dart';
 
 import '../model/board/party_action.dart';
@@ -12,7 +11,8 @@ import '../model/board/server_states.dart';
 part 'api.g.dart';
 
 /// Client side API (callings to the server side)
-@RestApi(baseUrl: "http://localhost")
+// @RestApi(baseUrl: "https://slavi.dev/dcn_web/api/")
+@RestApi(baseUrl: "http://localhost/")
 abstract class RestClient {
   factory RestClient(Dio dio, {String baseUrl}) = _RestClient;
 
@@ -41,13 +41,6 @@ abstract class RestClient {
   Future<void> chooseBranch(@Path("id") String idParty,
       @Path("idPlayer") String idPlayer, @Path("idTile") String idTile);
 
-  // // update player readiness
-  //   app.post("/party/:id:uuid/player/:idPlayer:uuid/readiness/:isReady:bool",
-  //       (req, res) async {
-  //     final isReady = req.params["isReady"];
-  //     etat.state.playerReady(req.params['idPlayer'], isReady);
-  //     res.send(null);
-  //   });
   /// update the readiness of the player
   ///
   /// isReady : 0=false else=true
@@ -126,6 +119,10 @@ void setUpServerRoutes(Alfred app, ServerEtat etat) {
     try {
       var name = req.params["name"];
       final id = const Uuid().v4();
+      if (name == null || name.length > 10) {
+        throw AlfredException(400, {'message': 'Invalid name'});
+      }
+
       etat.newPlayer(id, name);
       res.json(IdResponse(id));
     } catch (e) {

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../model/board/board.dart';
 import '../../model/board/party.dart';
-import '../party_repository.dart';
+import '../../model/repository/party_repository.dart';
 import 'widget/my_widget.dart';
 
 /// Page that allow user to buy and sell vehicles
@@ -64,10 +64,6 @@ class ShopVehiclePage extends CubeWidget<ShopVehiclePageCube> {
 
                   // button ready
                   ReadyButton(
-                    style: ButtonStyle(
-                        backgroundColor: cube.canUserReadyButton
-                            ? null
-                            : const MaterialStatePropertyAll(Colors.grey)),
                     disabled: !cube.canUserReadyButton,
                     onTapButDisabled: () => context.showSnackBar(
                       const SnackBar(

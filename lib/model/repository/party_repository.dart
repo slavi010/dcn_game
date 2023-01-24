@@ -1,12 +1,13 @@
+import 'dart:async';
+
 import 'package:cubes/cubes.dart';
 import 'package:dcn_game/model/board/party_action.dart';
+import 'package:dcn_game/model/repository/event_animation_repository.dart';
 import 'package:hive/hive.dart';
 
-import '../model/board/board.dart';
-import '../model/board/party.dart';
-import '../server/api.dart';
-
-import 'dart:async';
+import '../../server/api.dart';
+import '../board/board.dart';
+import '../board/party.dart';
 
 /// The current repository of the party
 class PartyRepository {
@@ -38,7 +39,7 @@ class PartyRepository {
     load();
 
     // update the party every X seconds
-    Timer.periodic(const Duration(seconds: 1), (_) => updateParty());
+    Timer.periodic(const Duration(seconds: 2), (_) => updateParty());
   }
 
   /// Save the party id and this player id in Hive
@@ -80,9 +81,17 @@ class PartyRepository {
     for (final action in history) {
       // check if the action is not already in the local history
       if (party.value!.history
-          .indexWhere((a) => a.idAction == action.idAction) ==
+              .indexWhere((a) => a.idAction == action.idAction) ==
           -1) {
-        party.value!.addAction(action);
+        party.value!.addAction(
+          action,
+          perform: true,
+        );
+      }
+
+      if (action is EventAnimationAction) {
+        Cubes.get<EventAnimationRepository>()
+            .addEventAnimation(action.eventAnimation);
       }
     }
 
