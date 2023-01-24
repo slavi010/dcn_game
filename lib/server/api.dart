@@ -41,13 +41,6 @@ abstract class RestClient {
   Future<void> chooseBranch(@Path("id") String idParty,
       @Path("idPlayer") String idPlayer, @Path("idTile") String idTile);
 
-  // // update player readiness
-  //   app.post("/party/:id:uuid/player/:idPlayer:uuid/readiness/:isReady:bool",
-  //       (req, res) async {
-  //     final isReady = req.params["isReady"];
-  //     etat.state.playerReady(req.params['idPlayer'], isReady);
-  //     res.send(null);
-  //   });
   /// update the readiness of the player
   ///
   /// isReady : 0=false else=true

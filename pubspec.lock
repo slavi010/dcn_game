@@ -312,6 +312,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "6.5.4"
+  json_to_model:
+    dependency: "direct dev"
+    description:
+      name: json_to_model
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "3.2.4"
   lints:
     dependency: transitive
     description:
@@ -403,6 +410,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "3.1.0+1"
+  quiver:
+    dependency: "direct main"
+    description:
+      name: quiver
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "3.2.1"
   retrofit:
     dependency: "direct main"
     description:

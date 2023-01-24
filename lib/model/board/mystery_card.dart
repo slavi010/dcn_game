@@ -30,6 +30,7 @@ abstract class MysteryCard {
 
   /// From json
   factory MysteryCard.fromJson(Map<String, dynamic> json) {
+    /// TODO : don't forget to add the new type of mystery card here and below
     switch (json["type"]) {
       case "snow_slow_1_all":
         return SnowSlow1AllMysteryCard.fromJson(json);
@@ -75,6 +76,8 @@ abstract class AllPlayersMysteryCard {}
 /// A mystery card that have a countdown of X turns
 abstract class RoundTimedMysteryCard extends MysteryCard {
   /// The duration of the effect
+  /// if defined as 1, this effect will last 1 turn (plus this turn if
+  /// stopPlayerTurnWhenPicked is false)
   int duration;
 
   RoundTimedMysteryCard({

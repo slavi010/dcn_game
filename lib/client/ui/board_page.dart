@@ -65,6 +65,8 @@ class BoardPage extends CubeWidget<BoardPageCube> {
         );
   }
 
+  /// @deprecated since switching to glassmorphism ui
+  /// (and honestly, it was not really good :p)
   List<Widget> _listWidget(BuildContext context, BoardPageCube cube) {
     return [
       const ListPlayerWidget(),

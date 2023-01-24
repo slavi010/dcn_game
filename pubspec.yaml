@@ -50,6 +50,7 @@ dependencies:
   glassmorphism_widgets: ^0.1.4
   zoom_widget: ^2.0.0
   simple_animations: ^5.0.0+3
+  quiver: ^3.2.1
 
 
   # for serialization
@@ -65,6 +66,7 @@ dev_dependencies:
   build_runner: ^2.3.2
   json_serializable: ^6.5.4
   retrofit_generator: '>=4.0.0 <5.0.0'
+  json_to_model: ^3.2.4
 
   alfred: ^0.1.7
 

@@ -1,7 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:dcn_game/model/board/mystery_card.dart';
 import 'package:dcn_game/model/event_animation.dart';
+import 'package:dcn_game/model/index.dart';
 import 'package:uuid/uuid.dart';
 
 import 'board.dart';
@@ -78,7 +81,11 @@ class ServerEtat {
   /// The current state of the server
   late ServerState _state;
 
+  late OptionsParty optionsParty;
+
   ServerState get state => _state;
+
+  static const optionsPartyPath = 'assets/images/options_party.json';
 
   set state(ServerState newState) {
     party.addAction(UpdateServerStateAction(newState));
@@ -93,9 +100,25 @@ class ServerEtat {
   }
 
   /// init the party
-  void initParty() {
+  void initParty() async {
+    // todo : load options from the file
+    final jsonOptions = await File(optionsPartyPath)
+        .openRead()
+        .map(utf8.decode)
+        .transform(const JsonDecoder())
+        .first as Map<String, dynamic>;
+    optionsParty = OptionsParty.fromJson(jsonOptions);
     party = Party(const Uuid().v4());
-    party.initBoardA();
+
+    final jsonTiles = await File(
+        optionsParty.optionsGlobalParty.boardJsonAssetsPath)
+        .openRead()
+        .map(utf8.decode)
+        .transform(const JsonDecoder())
+        .first as List<dynamic>;
+
+    party.initFromJson(jsonTiles);
+
     state = WaitingForPlayerServerState(this);
   }
 
@@ -207,7 +230,7 @@ class WaitingForPlayerServerState extends ServerState {
       : super(etat: etat, init: init);
 
   factory WaitingForPlayerServerState.fromJson(Map<String, dynamic> json,
-          {ServerEtat? etat, bool init = true}) =>
+      {ServerEtat? etat, bool init = true}) =>
       WaitingForPlayerServerState(etat, init: init);
 
   @override
@@ -217,13 +240,21 @@ class WaitingForPlayerServerState extends ServerState {
       return;
     }
 
+    // check if the room is not full
+    if (etat.party.players.length >=
+        etat.optionsParty.optionsGlobalParty.nbPlayerMax) {
+      return;
+    }
+
     etat.party.addAction(PartyAction.newPlayer(id, name));
   }
 
   @override
   void playerReady(String id, bool isReady) {
     etat.party.addAction(PartyAction.playerReady(id, isReady));
-    if (etat.party.isReadyToStart()) {
+    if (etat.party.isReadyToStart() &&
+        etat.party.players.length >=
+            etat.optionsParty.optionsGlobalParty.nbPlayerMin) {
       // turn all ready player to not ready
       for (final player in etat.party.players) {
         etat.party.addAction(PartyAction.playerReady(player.id, false));
@@ -238,7 +269,7 @@ class StartGameServerState extends ServerState {
       : super(etat: etat, init: init);
 
   factory StartGameServerState.fromJson(Map<String, dynamic> json,
-          {ServerEtat? etat, bool init = true}) =>
+      {ServerEtat? etat, bool init = true}) =>
       StartGameServerState(etat, init: init);
 
   @override
@@ -253,7 +284,7 @@ class NewRoundServerState extends ServerState {
       : super(etat: etat, init: init);
 
   factory NewRoundServerState.fromJson(Map<String, dynamic> json,
-          {ServerEtat? etat, bool init = true}) =>
+      {ServerEtat? etat, bool init = true}) =>
       NewRoundServerState(etat, init: init);
 
   @override
@@ -292,7 +323,7 @@ class ChooseVehicleServerState extends ServerState {
       : super(etat: etat, init: init);
 
   factory ChooseVehicleServerState.fromJson(Map<String, dynamic> json,
-          {ServerEtat? etat, bool init = true}) =>
+      {ServerEtat? etat, bool init = true}) =>
       ChooseVehicleServerState(etat, init: init);
 
   @override
@@ -306,7 +337,7 @@ class ChooseVehicleServerState extends ServerState {
   @override
   void buyVehicle(String idPlayer, String type) {
     final player =
-        etat.party.players.firstWhere((element) => element.id == idPlayer);
+    etat.party.players.firstWhere((element) => element.id == idPlayer);
     final vehicle = Vehicle.fromType(type: type);
     // check if the player can buy the vehicle
     if (vehicle.getBuyCost() <= player.points &&
@@ -318,7 +349,7 @@ class ChooseVehicleServerState extends ServerState {
   @override
   void sellVehicle(String idPlayer, String type) {
     final player =
-        etat.party.players.firstWhere((element) => element.id == idPlayer);
+    etat.party.players.firstWhere((element) => element.id == idPlayer);
     final vehicle = Vehicle.fromType(type: type);
     // check if the player can sell the vehicle
     if (player.vehicles.isNotEmpty &&
@@ -349,7 +380,7 @@ class NewPlayerServerState extends ServerState {
       : super(etat: etat, init: init);
 
   factory NewPlayerServerState.fromJson(Map<String, dynamic> json,
-          {ServerEtat? etat, bool init = true}) =>
+      {ServerEtat? etat, bool init = true}) =>
       NewPlayerServerState(etat, init: init);
 
   @override
@@ -429,7 +460,7 @@ class ChooseBranchServerState extends ServerState {
       : super(etat: etat, init: init);
 
   factory ChooseBranchServerState.fromJson(Map<String, dynamic> json,
-          {ServerEtat? etat, bool init = true}) =>
+      {ServerEtat? etat, bool init = true}) =>
       ChooseBranchServerState(etat, init: init);
 
   @override
@@ -452,11 +483,13 @@ class MovePlayerServerState extends ServerState {
       : super(etat: etat, init: init);
 
   factory MovePlayerServerState.fromJson(Map<String, dynamic> json,
-          {ServerEtat? etat, bool init = true}) =>
+      {ServerEtat? etat, bool init = true}) =>
       MovePlayerServerState(etat, json['idTile'], init: init);
 
   @override
-  Map<String, dynamic> toJson() => super.toJson()..addAll({'idTile': idTile});
+  Map<String, dynamic> toJson() =>
+      super.toJson()
+        ..addAll({'idTile': idTile});
 
   @override
   void init() {
@@ -544,7 +577,7 @@ class MovePlayerServerState extends ServerState {
     for (BoardAction boardAction in boardActions) {
       switch (boardAction.runtimeType) {
         case TakeMysteryCard:
-          // pick a card
+        // pick a card
           final card = TakeMysteryCard.getMysteryCard();
 
           // launch the pick card animation
@@ -594,7 +627,7 @@ class GameOverServerState extends ServerState {
       : super(etat: etat, init: init);
 
   factory GameOverServerState.fromJson(Map<String, dynamic> json,
-          {ServerEtat? etat, bool init = true}) =>
+      {ServerEtat? etat, bool init = true}) =>
       GameOverServerState(etat, init: init);
 
 // TODO game over state

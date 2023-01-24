@@ -528,6 +528,16 @@ class PointCard {
       performance: json["performance"],
     );
   }
+
+  /// Clone
+  PointCard clone() {
+    return PointCard(
+      money: money,
+      energy: energy,
+      environment: environment,
+      performance: performance,
+    );
+  }
 }
 
 /// Vehicle
