@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:quiver/core.dart';
 
 
@@ -10,7 +9,6 @@ import 'index.dart';
 // See https://pub.dev/packages/json_to_model
 // Input json file: jsons/options_party.json
 
-@immutable
 /// Options of the party parsed from a json file
 
 class OptionsParty {
@@ -55,7 +53,7 @@ class OptionsParty {
   int get hashCode => optionsGlobalParty.hashCode ^ optionsRounds.hashCode;
 }
 
-@immutable
+
 class OptionsGlobalParty {
 
   const OptionsGlobalParty({
@@ -112,7 +110,7 @@ class OptionsGlobalParty {
   int get hashCode => nbPlayerMin.hashCode ^ nbPlayerMax.hashCode ^ boardImageAssetsPath.hashCode ^ boardJsonAssetsPath.hashCode;
 }
 
-@immutable
+
 class OptionsRound {
 
   const OptionsRound({
@@ -190,7 +188,7 @@ class OptionsRound {
   int get hashCode => startPosition.hashCode ^ pointsSab.hashCode ^ points.hashCode ^ vehicleSab.hashCode ^ vehicle.hashCode ^ startShopAvailable.hashCode ^ aims.hashCode;
 }
 
-@immutable
+
 class Aims {
 
   const Aims({
