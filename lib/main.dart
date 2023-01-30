@@ -79,6 +79,7 @@ class MyApp extends StatelessWidget {
       ),
       home: MaterialApp(
         debugShowCheckedModeBanner: false,
+        title: 'Battle-Fleet - Vectura System',
         theme: ThemeData(
           primarySwatch: Colors.brown,
           // dark mode

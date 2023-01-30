@@ -38,6 +38,18 @@ abstract class MysteryCard {
         return SnowSlow1MysteryCard.fromJson(json);
       case "snow_slow_2":
         return SnowSlow2MysteryCard.fromJson(json);
+      case "rain_slow_1_all":
+        return SnowSlow1AllMysteryCard.fromJson(json);
+      case "rain_slow_1":
+        return SnowSlow1MysteryCard.fromJson(json);
+      case "rain_slow_2":
+        return SnowSlow2MysteryCard.fromJson(json);
+      case "accident_slow_1":
+        return AccidentSlow1MysteryCard.fromJson(json);
+      case "fluid_circulation_1":
+        return FluidCirculation1MysteryCard.fromJson(json);
+      case "fluid_circulation_2":
+        return FluidCirculation2MysteryCard.fromJson(json);
       default:
         throw Exception("Unknown mystery card type ${json["type"]}, "
             "did you forget to add it to the factory?");
@@ -55,6 +67,12 @@ abstract class MysteryCard {
     "snow_slow_1_all": () => SnowSlow1AllMysteryCard(),
     "snow_slow_1": () => SnowSlow1MysteryCard(),
     "snow_slow_2": () => SnowSlow2MysteryCard(),
+    "rain_slow_1_all": () => RainSlow1AllMysteryCard(),
+    "rain_slow_1": () => RainSlow1MysteryCard(),
+    "rain_slow_2": () => RainSlow2MysteryCard(),
+    "accident_slow_1": () => AccidentSlow1MysteryCard(),
+    "fluid_circulation_1": () => FluidCirculation1MysteryCard(),
+    "fluid_circulation_2": () => FluidCirculation2MysteryCard(),
   };
 
   /// Stop the player turn when the card is picked ?
@@ -102,7 +120,7 @@ abstract class RoundTimedMysteryCard extends MysteryCard {
 }
 
 /// Snow card
-/// All players move 2x time slower for the next round
+/// All players move 2x times slower for the next round
 @JsonSerializable()
 class SnowSlow1AllMysteryCard extends RoundTimedMysteryCard
     implements AllPlayersMysteryCard {
@@ -113,8 +131,8 @@ class SnowSlow1AllMysteryCard extends RoundTimedMysteryCard
   SnowSlow1AllMysteryCard()
       : super(
           id: const Uuid().v4(),
-          name: "Snow",
-          description: "All players move 2x time slower for the next round",
+          name: "Snow for everyone",
+          description: "All players move 2x times slower for the next round",
           duration: 1,
           imageId: 3,
         );
@@ -127,7 +145,7 @@ class SnowSlow1AllMysteryCard extends RoundTimedMysteryCard
       super.toJson()..addAll(_$SnowSlow1AllMysteryCardToJson(this));
 
   @override
-  bool get stopPlayerTurnWhenPicked => true;
+  bool get stopPlayerTurnWhenPicked => false;
 
   @override
   double get speedFactor => 0.5;
@@ -137,7 +155,7 @@ class SnowSlow1AllMysteryCard extends RoundTimedMysteryCard
 }
 
 /// Snow card
-/// The player move 2x time slower for the next round
+/// The player move 2x times slower for the next round
 @JsonSerializable()
 class SnowSlow1MysteryCard extends RoundTimedMysteryCard {
   @override
@@ -148,7 +166,7 @@ class SnowSlow1MysteryCard extends RoundTimedMysteryCard {
       : super(
           id: const Uuid().v4(),
           name: "Snow",
-          description: "The player move 2x time slower for the next round",
+          description: "The player move 2x times slower for the next round",
           duration: 1,
           imageId: 4,
         );
@@ -161,7 +179,7 @@ class SnowSlow1MysteryCard extends RoundTimedMysteryCard {
       super.toJson()..addAll(_$SnowSlow1MysteryCardToJson(this));
 
   @override
-  bool get stopPlayerTurnWhenPicked => true;
+  bool get stopPlayerTurnWhenPicked => false;
 
   @override
   double get speedFactor => 0.5;
@@ -171,7 +189,7 @@ class SnowSlow1MysteryCard extends RoundTimedMysteryCard {
 }
 
 /// Snow card
-/// The player move 2x time slower for the next 2 rounds
+/// The player move 2x times slower for the next 2 rounds
 @JsonSerializable()
 class SnowSlow2MysteryCard extends RoundTimedMysteryCard {
   @override
@@ -181,8 +199,8 @@ class SnowSlow2MysteryCard extends RoundTimedMysteryCard {
   SnowSlow2MysteryCard()
       : super(
           id: const Uuid().v4(),
-          name: "Snow",
-          description: "The player move 2x time slower for the next 2 rounds",
+          name: "Snow for two round",
+          description: "The player move 2x times slower for the next 2 rounds",
           duration: 2,
           imageId: 5,
         );
@@ -195,7 +213,7 @@ class SnowSlow2MysteryCard extends RoundTimedMysteryCard {
       super.toJson()..addAll(_$SnowSlow2MysteryCardToJson(this));
 
   @override
-  bool get stopPlayerTurnWhenPicked => true;
+  bool get stopPlayerTurnWhenPicked => false;
 
   @override
   double get speedFactor => 0.5;
@@ -207,7 +225,7 @@ class SnowSlow2MysteryCard extends RoundTimedMysteryCard {
 // Same but for raining
 
 /// Rain card
-/// All players move 2x time slower for the next round
+/// All players move 2x times slower for the next round
 @JsonSerializable()
 class RainSlow1AllMysteryCard extends RoundTimedMysteryCard
     implements AllPlayersMysteryCard {
@@ -218,8 +236,8 @@ class RainSlow1AllMysteryCard extends RoundTimedMysteryCard
   RainSlow1AllMysteryCard()
       : super(
           id: const Uuid().v4(),
-          name: "Rain",
-          description: "All players move 2x time slower for the next round",
+          name: "Rain for everyone",
+          description: "All players move 2x times slower for the next round",
           duration: 1,
           imageId: 6,
         );
@@ -232,7 +250,7 @@ class RainSlow1AllMysteryCard extends RoundTimedMysteryCard
       super.toJson()..addAll(_$RainSlow1AllMysteryCardToJson(this));
 
   @override
-  bool get stopPlayerTurnWhenPicked => true;
+  bool get stopPlayerTurnWhenPicked => false;
 
   @override
   double get speedFactor => 0.5;
@@ -242,7 +260,7 @@ class RainSlow1AllMysteryCard extends RoundTimedMysteryCard
 }
 
 /// Rain card
-/// The player move 2x time slower for the next round
+/// The player move 2x times slower for the next round
 @JsonSerializable()
 class RainSlow1MysteryCard extends RoundTimedMysteryCard {
   @override
@@ -253,7 +271,7 @@ class RainSlow1MysteryCard extends RoundTimedMysteryCard {
       : super(
           id: const Uuid().v4(),
           name: "Rain",
-          description: "The player move 2x time slower for the next round",
+          description: "The player move 2x times slower for the next round",
           duration: 1,
           imageId: 7,
         );
@@ -266,7 +284,7 @@ class RainSlow1MysteryCard extends RoundTimedMysteryCard {
       super.toJson()..addAll(_$RainSlow1MysteryCardToJson(this));
 
   @override
-  bool get stopPlayerTurnWhenPicked => true;
+  bool get stopPlayerTurnWhenPicked => false;
 
   @override
   double get speedFactor => 0.5;
@@ -276,7 +294,7 @@ class RainSlow1MysteryCard extends RoundTimedMysteryCard {
 }
 
 /// Rain card
-/// The player move 2x time slower for the next 2 rounds
+/// The player move 2x times slower for the next 2 rounds
 @JsonSerializable()
 class RainSlow2MysteryCard extends RoundTimedMysteryCard {
   @override
@@ -286,8 +304,8 @@ class RainSlow2MysteryCard extends RoundTimedMysteryCard {
   RainSlow2MysteryCard()
       : super(
           id: const Uuid().v4(),
-          name: "Rain",
-          description: "The player move 2x time slower for the next 2 rounds",
+          name: "Rain for two round",
+          description: "The player move 2x times slower for the next 2 rounds",
           duration: 2,
           imageId: 8,
         );
@@ -300,10 +318,114 @@ class RainSlow2MysteryCard extends RoundTimedMysteryCard {
       super.toJson()..addAll(_$RainSlow2MysteryCardToJson(this));
 
   @override
-  bool get stopPlayerTurnWhenPicked => true;
+  bool get stopPlayerTurnWhenPicked => false;
 
   @override
   double get speedFactor => 0.5;
+
+  @override
+  bool get stuckPlayerWhenPossessed => false;
+}
+
+
+/// Accident card
+/// The player move 2x times slower for the next round
+@JsonSerializable()
+class AccidentSlow1MysteryCard extends RoundTimedMysteryCard {
+  @override
+  String get type => "accident_slow_1";
+
+  /// The json constructor
+  AccidentSlow1MysteryCard()
+      : super(
+    id: const Uuid().v4(),
+    name: "Accident",
+    description: "The player move 2x times slower for the next round",
+    duration: 1,
+    imageId: 9,
+  );
+
+  factory AccidentSlow1MysteryCard.fromJson(Map<String, dynamic> json) =>
+      _$AccidentSlow1MysteryCardFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() =>
+      super.toJson()..addAll(_$AccidentSlow1MysteryCardToJson(this));
+
+  @override
+  bool get stopPlayerTurnWhenPicked => false;
+
+  @override
+  double get speedFactor => 0.5;
+
+  @override
+  bool get stuckPlayerWhenPossessed => false;
+}
+
+
+/// Fluid Circulation card
+/// The player move 2x times faster for the next round
+@JsonSerializable()
+class FluidCirculation1MysteryCard extends RoundTimedMysteryCard {
+  @override
+  String get type => "fluid_circulation_1";
+
+  /// The json constructor
+  FluidCirculation1MysteryCard()
+      : super(
+    id: const Uuid().v4(),
+    name: "Fluid Circulation",
+    description: "The player move 2x times faster for the next round",
+    duration: 1,
+    imageId: 10,
+  );
+
+  factory FluidCirculation1MysteryCard.fromJson(Map<String, dynamic> json) =>
+      _$FluidCirculation1MysteryCardFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() =>
+      super.toJson()..addAll(_$FluidCirculation1MysteryCardToJson(this));
+
+  @override
+  bool get stopPlayerTurnWhenPicked => false;
+
+  @override
+  double get speedFactor => 2;
+
+  @override
+  bool get stuckPlayerWhenPossessed => false;
+}
+
+/// Fluid Circulation card
+/// The player move 2x times faster for the next 2 rounds
+@JsonSerializable()
+class FluidCirculation2MysteryCard extends RoundTimedMysteryCard {
+  @override
+  String get type => "fluid_circulation_2";
+
+  /// The json constructor
+  FluidCirculation2MysteryCard()
+      : super(
+    id: const Uuid().v4(),
+    name: "Fluid Circulation for 2 rounds",
+    description: "The player move 2x times faster for the next 2 rounds",
+    duration: 2,
+    imageId: 11,
+  );
+
+  factory FluidCirculation2MysteryCard.fromJson(Map<String, dynamic> json) =>
+      _$FluidCirculation2MysteryCardFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() =>
+      super.toJson()..addAll(_$FluidCirculation2MysteryCardToJson(this));
+
+  @override
+  bool get stopPlayerTurnWhenPicked => false;
+
+  @override
+  double get speedFactor => 2;
 
   @override
   bool get stuckPlayerWhenPossessed => false;

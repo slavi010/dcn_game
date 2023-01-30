@@ -262,6 +262,10 @@ class WaitingForPlayerServerState extends ServerState {
     }
 
     etat.party.addAction(PartyAction.newPlayer(id, name));
+
+    if (etat.optionsParty.optionsGlobalParty.nbPlayerMax == 1) {
+      playerReady(id, true);
+    }
   }
 
   @override
@@ -304,8 +308,6 @@ class NewRoundServerState extends ServerState {
 
   @override
   void init() {
-    // TODO : if already 3 round are passed : game over
-
     // TODO : show stats
 
     // update the round number
@@ -556,7 +558,8 @@ class MovePlayerServerState extends ServerState {
   @override
   void init() {
     final currentPlayer = etat.party.currentPlayer!;
-    var endOfTurn = currentPlayer.autonomy <= 0;
+    var endOfTurn =
+        currentPlayer.autonomy <= 0 || etat.party.reachableTiles.length == 1;
 
     // perform the board action and if its end of turn, end the turn
     if (endOfTurn) {
@@ -628,7 +631,8 @@ class MovePlayerServerState extends ServerState {
         .where((t) => t.canPass(currentPlayer.vehicle!))
         .where((t) => t.id != previousTile.id)
         .toList();
-    if (possibleNextMove.length != 1 && currentPlayer.autonomy > 0) {
+    if (possibleNextMove.length != 1 &&
+        (currentPlayer.autonomy > 0 && etat.party.reachableTiles.length > 1)) {
       etat.state = ChooseBranchServerState(etat);
     } else {
       etat.state = MovePlayerServerState(etat, possibleNextMove.first.id);
@@ -699,124 +703,3 @@ class GameOverServerState extends ServerState {
 
 // TODO game over state
 }
-
-// /// waiting for player to join
-// class WaitingForPlayerServerState extends ServerState {
-//   WaitingForPlayerServerState(ServerEtat etat) : super(etat);
-//
-//   @override
-//   void newPlayer(String id, String name) {
-//     etat.party.addAction(AddPlayerPartyAction(id, name));
-//   }
-//
-//   @override
-//   void startGame() {
-//     if (etat.party.players.length < 2) {
-//       return;
-//     }
-//     for (final player in etat.party.players) {
-//       etat.party.addAction(SetPlayerAction(
-//         id: player.id,
-//         load: Random().nextDouble() * 15,
-//         vehicleType:
-//             Vehicle.allTypes[Random().nextInt(Vehicle.allTypes.length)],
-//         idGoalPOI: etat.party.board
-//             .pois[Random().nextInt(etat.party.board.pois.length)].id,
-//         idCurrentTile: etat.party.board.tiles
-//             .firstWhere((element) => element.contains(WarehouseBTile.sType))
-//             .id,
-//       ));
-//       // deduce the point to buy the vehicle
-//       player.points -= player.vehicle!.getBuyCost();
-//
-//       // set the autonomy to max
-//       etat.party.addAction(
-//           SetPlayerAction(id: player.id, autonomy: player.vehicle?.autonomy));
-//     }
-//
-//     etat.party.addAction(UpdateCurrentPlayerAction(
-//         id: etat
-//             .party.players[Random().nextInt(etat.party.players.length)].id));
-//
-//     etat.state = WaitingForPlayerChooseBranchServerState(etat);
-//     (etat.state as WaitingForPlayerChooseBranchServerState)
-//         .setMaxCurrentPlayerAutonomy();
-//   }
-// }
-//
-// /// waiting for player to choose a branch
-// /// the player is on a branch
-// class WaitingForPlayerChooseBranchServerState extends ServerState {
-//   WaitingForPlayerChooseBranchServerState(ServerEtat etat) : super(etat);
-//
-//   void setMaxCurrentPlayerAutonomy() {
-//     etat.party.addAction(SetPlayerAction(
-//         id: etat.party.currentPlayer!.id,
-//         autonomy: etat.party.currentPlayer!.vehicle?.autonomy ?? 0));
-//   }
-//
-//   @override
-//   void playerChooseBranch(String idTile) {
-//     if (etat.party.currentPlayer?.currentTile?.nexts
-//             .map((t) => t.id)
-//             .contains(idTile) ??
-//         false) {
-//       // update the player position
-//       etat.party.addAction(SetPlayerAction(
-//           id: etat.party.currentPlayer!.id,
-//           idCurrentTile: idTile,
-//           autonomy: etat.party.currentPlayer!.autonomy - 1));
-//       // check if the player is on his goal
-//       if (etat.party.currentPlayer?.goalPOI != null &&
-//           etat.party.currentPlayer?.currentTile?.id ==
-//               etat.party.currentPlayer?.goalPOI?.id) {
-//         // then the deduce the max load of the vehicle from the player load
-//         // if all is delivered, then the player win
-//         etat.party.addAction(SetPlayerAction(
-//             id: etat.party.currentPlayer!.id,
-//             load: max(
-//                 0,
-//                 etat.party.currentPlayer!.load -
-//                     etat.party.currentPlayer!.vehicle!.maxLoad)));
-//         // if the player have no more load, then he win
-//         // if (etat.party.currentPlayer!.load == 0) {
-//         //   etat.party
-//         //       .addAction(SetPlayerAction(id: etat.party.currentPlayer!.id));
-//         //   etat.state = GameOverServerState(etat);
-//         //   return;
-//         // }
-//
-//       }
-//       // check if the player can move
-//       if (etat.party.currentPlayer!.autonomy > 0) {
-//         etat.state = WaitingForPlayerChooseBranchServerState(etat);
-//       } else {
-//         // choose the next player
-//         int currentIndex;
-//         do {
-//           currentIndex = etat.party.players.indexWhere(
-//               (element) => element.id == etat.party.currentPlayer!.id);
-//           currentIndex++;
-//           if (currentIndex >= etat.party.players.length) {
-//             currentIndex = 0;
-//           }
-//         } while (!etat.party.players[currentIndex].canMove());
-//
-//         // deduce the point to use the vehicle
-//         etat.party.currentPlayer!.points -=
-//             etat.party.currentPlayer!.vehicle!.getUseCost();
-//
-//         etat.party.addAction(
-//             UpdateCurrentPlayerAction(id: etat.party.players[currentIndex].id));
-//         etat.state = WaitingForPlayerChooseBranchServerState(etat);
-//         (etat.state as WaitingForPlayerChooseBranchServerState)
-//             .setMaxCurrentPlayerAutonomy();
-//       }
-//     }
-//   }
-// }
-//
-// /// game over
-// class GameOverServerState extends ServerState {
-//   GameOverServerState(ServerEtat etat) : super(etat);
-// }

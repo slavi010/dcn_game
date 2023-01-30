@@ -296,16 +296,19 @@ class PlayerPositionWidget extends StatelessWidget {
                   _getPlayerPelletPosition(i).x * size * (1 - pelletSizeFactor),
               top:
                   _getPlayerPelletPosition(i).y * size * (1 - pelletSizeFactor),
-              child: Tooltip(
-                message: '${players[i].name} - ${players[i].vehicle?.name}',
-                child: Container(
-                  width: size * pelletSizeFactor,
-                  height: size * pelletSizeFactor,
-                  decoration: BoxDecoration(
-                    // get the player color
-                    color: colors[players[i]
-                        .indexPlayer(Cubes.get<PartyRepository>().party.value!)],
-                    shape: BoxShape.circle,
+              child: Hero(
+                tag: 'player-${players[i].id}',
+                child: Tooltip(
+                  message: '${players[i].name} - ${players[i].vehicle?.name}',
+                  child: Container(
+                    width: size * pelletSizeFactor,
+                    height: size * pelletSizeFactor,
+                    decoration: BoxDecoration(
+                      // get the player color
+                      color: colors[players[i]
+                          .indexPlayer(Cubes.get<PartyRepository>().party.value!)],
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
               ),

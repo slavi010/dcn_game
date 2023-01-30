@@ -368,15 +368,18 @@ class MysteryCardWidget extends CubeWidget<MysteryCardWidgetCube> {
 
   @override
   Widget buildView(BuildContext context, MysteryCardWidgetCube cube) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text('${cube.getPlayerName(playerId)} has picked a card !'),
-        const SizedBox(
-          height: 20,
-        ),
-        Text(mysteryCard.description),
-      ],
+    return SizedBox(
+      // height: min(context.heightScreen, 300)
+      child: ListView(
+        shrinkWrap: true,
+        children: [
+          Text('${cube.getPlayerName(playerId)} has picked a card !'),
+          const SizedBox(
+            height: 20,
+          ),
+          Text(mysteryCard.description),
+        ],
+      ),
     );
   }
 }
@@ -455,41 +458,36 @@ class UIBoardPage extends CubeWidget<UIBoardPageCube> {
   Widget _points(BuildContext context, UIBoardPageCube cube) {
     return ShadowGlassContainer(
       padding: const EdgeInsets.all(8),
-      child: SizedBox(
-        width: min(context.widthScreen, 300),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // current player points
-            ListTile(
-              title: CustomGlassText(
-                'Current points',
-                style: context.textTheme.headline6,
-              ),
-              subtitle: cube.partyRepository.party
-                  .build<Party?>((party) => PointCardWidget(
-                        points: cube.partyRepository.thisPlayer?.points,
-                      )),
+      child: ListView(
+        shrinkWrap: true,
+        children: [
+          // current player points
+          ListTile(
+            title: CustomGlassText(
+              'Current points',
+              style: context.textTheme.headline6,
             ),
-            const SizedBox(width: 8),
+            subtitle: cube.partyRepository.party
+                .build<Party?>((party) => PointCardWidget(
+                      points: cube.partyRepository.thisPlayer?.points,
+                    )),
+          ),
+          const SizedBox(width: 8),
 
-            ListTile(
-              title: Flexible(
-                child: CustomGlassText(
-                  'You will spend/earn this to use your vehicles for '
-                  '${cube.isThisPlayerTurn() ? 'this' : 'the next'} turn',
-                  style: context.textTheme.headline6,
-                ),
-              ),
-              subtitle: PointCardWidget(
-                points: cube.partyRepository.thisPlayer?.vehicle?.getUseCost(),
-                negativeColor: Colors.black,
-                positiveColor: Colors.lightGreen,
-                reverseValues: true,
-              ),
+          ListTile(
+            title: CustomGlassText(
+              'You will spend/earn this to use your vehicles for '
+              '${cube.isThisPlayerTurn() ? 'this' : 'the next'} turn',
+              style: context.textTheme.headline6,
             ),
-          ],
-        ),
+            subtitle: PointCardWidget(
+              points: cube.partyRepository.thisPlayer?.vehicle?.getUseCost(),
+              negativeColor: Colors.black,
+              positiveColor: Colors.lightGreen,
+              reverseValues: true,
+            ),
+          ),
+        ],
       ),
     );
   }

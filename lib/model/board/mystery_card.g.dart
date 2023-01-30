@@ -65,3 +65,33 @@ Map<String, dynamic> _$RainSlow2MysteryCardToJson(
     <String, dynamic>{
       'duration': instance.duration,
     };
+
+AccidentSlow1MysteryCard _$AccidentSlow1MysteryCardFromJson(
+        Map<String, dynamic> json) =>
+    AccidentSlow1MysteryCard()..duration = json['duration'] as int;
+
+Map<String, dynamic> _$AccidentSlow1MysteryCardToJson(
+        AccidentSlow1MysteryCard instance) =>
+    <String, dynamic>{
+      'duration': instance.duration,
+    };
+
+FluidCirculation1MysteryCard _$FluidCirculation1MysteryCardFromJson(
+        Map<String, dynamic> json) =>
+    FluidCirculation1MysteryCard()..duration = json['duration'] as int;
+
+Map<String, dynamic> _$FluidCirculation1MysteryCardToJson(
+        FluidCirculation1MysteryCard instance) =>
+    <String, dynamic>{
+      'duration': instance.duration,
+    };
+
+FluidCirculation2MysteryCard _$FluidCirculation2MysteryCardFromJson(
+        Map<String, dynamic> json) =>
+    FluidCirculation2MysteryCard()..duration = json['duration'] as int;
+
+Map<String, dynamic> _$FluidCirculation2MysteryCardToJson(
+        FluidCirculation2MysteryCard instance) =>
+    <String, dynamic>{
+      'duration': instance.duration,
+    };
