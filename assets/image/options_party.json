@@ -2,25 +2,25 @@
   "options_global_party": {
     "nb_player_min": 1,
     "nb_player_max": 4,
-    "board_image_assets_path": "assets/image/board/board_A.jpg",
-    "board_json_assets_path": "assets/json/board/board_A.json"
+    "board_image_assets_path": "./assets/image/board/default_board.png",
+    "board_json_assets_path": "./assets/image/board/board_A.json"
   },
   "options_rounds": [
     {
-      "start_position": "warehouse",
+      "start_position": "Warehouse",
       "points_sab": false,
       "points": {
-        "money": 10,
-        "energy": 10,
-        "environment": 10,
-        "performance": 10
+        "money": 20,
+        "energy": 20,
+        "environment": 20,
+        "performance": 20
       },
       "vehicle_sab": false,
-      "vehicle": ["b"],
+      "vehicle": ["g"],
       "start_shop_available": false,
       "aims": {
         "type": "defined",
-        "targets?": ["garage", "warehouse"]
+        "targets": ["Garage", "Warehouse"]
       }
     }
   ]

@@ -33,6 +33,10 @@ class Party {
   /// End of Round Players
   List<Player> eorPlayers = [];
 
+  /// The current round
+  /// Start at 1
+  int round = 0;
+
   /// The state of the server
   /// Can be null at the beginning
   ServerState? serverState;
@@ -70,13 +74,13 @@ class Party {
     if (currentPlayer == null || currentPlayer!.currentTile == null) {
       return [];
     }
-    _reachableTiles ??= board.getReachableTiles(currentPlayer!.currentTile!, currentPlayer!);
+    _reachableTiles ??=
+        board.getReachableTiles(currentPlayer!.currentTile!, currentPlayer!);
 
     return _reachableTiles!;
   }
 
   /// Config of the party
-
 
   /// An example of a map (should be not be used)
   /// init the map
@@ -163,7 +167,17 @@ class Party {
     // create the tiles
     var index = 0;
     for (var tile in tiles) {
-      addAction(AddTileAction(uuids[index], tile[0], tile[1]));
+      // Hey, sorry but need to fix an tiles offset in last minute
+      // so is not really clean :(
+      if (board.pathToBoardImage == "./assets/image/board/default_board.png") {
+        addAction(AddTileAction(
+            uuids[index],
+            tile[0] - 70 + (85 * (tile[0] / 982)).floor(),
+            tile[1] - 70 + (82 * (tile[1] / 721)).floor()));
+      } else {
+        addAction(AddTileAction(uuids[index], tile[0], tile[1]));
+      }
+
       if (tile.length > 3) {
         // add special actions to the chained cards
         for (var special in tile[3]) {

@@ -13,7 +13,7 @@ class _RestClient implements RestClient {
     this._dio, {
     this.baseUrl,
   }) {
-    baseUrl ??= 'https://slavi.dev/dcn_web/api/';
+    baseUrl ??= 'http://localhost/';
   }
 
   final Dio _dio;

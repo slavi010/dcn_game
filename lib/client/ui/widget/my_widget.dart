@@ -240,6 +240,13 @@ class PlayerPositionWidget extends StatelessWidget {
   final List<Player> players;
   final double size;
 
+  static const colors = [
+    Colors.red,
+    Colors.blue,
+    Colors.green,
+    Colors.yellow,
+  ];
+
   const PlayerPositionWidget(
       {Key? key, required this.tile, required this.players, required this.size})
       : super(key: key);
@@ -289,14 +296,17 @@ class PlayerPositionWidget extends StatelessWidget {
                   _getPlayerPelletPosition(i).x * size * (1 - pelletSizeFactor),
               top:
                   _getPlayerPelletPosition(i).y * size * (1 - pelletSizeFactor),
-              child: Container(
-                width: size * pelletSizeFactor,
-                height: size * pelletSizeFactor,
-                decoration: BoxDecoration(
-                  // get the player color
-                  color: Colors.primaries[players[i]
-                      .indexPlayer(Cubes.get<PartyRepository>().party.value!)],
-                  shape: BoxShape.circle,
+              child: Tooltip(
+                message: '${players[i].name} - ${players[i].vehicle?.name}',
+                child: Container(
+                  width: size * pelletSizeFactor,
+                  height: size * pelletSizeFactor,
+                  decoration: BoxDecoration(
+                    // get the player color
+                    color: colors[players[i]
+                        .indexPlayer(Cubes.get<PartyRepository>().party.value!)],
+                    shape: BoxShape.circle,
+                  ),
                 ),
               ),
             ),

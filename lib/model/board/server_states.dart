@@ -81,11 +81,16 @@ class ServerEtat {
   /// The current state of the server
   late ServerState _state;
 
+  static const optionsPartyPath = './assets/image/options_party.json';
+
+  /// The options for this party.
+  /// Get from the file [optionsPartyPath]
   late OptionsParty optionsParty;
 
-  ServerState get state => _state;
+  /// Just a shortcut to the current round options
+  OptionsRound get optionsRound => optionsParty.optionsRounds[party.round - 1];
 
-  static const optionsPartyPath = 'assets/images/options_party.json';
+  ServerState get state => _state;
 
   set state(ServerState newState) {
     party.addAction(UpdateServerStateAction(newState));
@@ -101,7 +106,7 @@ class ServerEtat {
 
   /// init the party
   void initParty() async {
-    // todo : load options from the file
+    // load the options from the file
     final jsonOptions = await File(optionsPartyPath)
         .openRead()
         .map(utf8.decode)
@@ -110,13 +115,23 @@ class ServerEtat {
     optionsParty = OptionsParty.fromJson(jsonOptions);
     party = Party(const Uuid().v4());
 
-    final jsonTiles = await File(
-        optionsParty.optionsGlobalParty.boardJsonAssetsPath)
-        .openRead()
-        .map(utf8.decode)
-        .transform(const JsonDecoder())
-        .first as List<dynamic>;
+    if (!optionsParty.optionsGlobalParty.boardJsonAssetsPath.startsWith('./')) {
+      throw ArgumentError(
+          'The boardJsonAssetsPath (options_global_party > board_json_assets_path) must start with "./"');
+    }
 
+    final jsonTiles =
+        await File(optionsParty.optionsGlobalParty.boardJsonAssetsPath)
+            .openRead()
+            .map(utf8.decode)
+            .transform(const JsonDecoder())
+            .first as List<dynamic>;
+
+    // Update the board image path
+    party.addAction(PartyAction.updateBoardImagePath(
+        optionsParty.optionsGlobalParty.boardImageAssetsPath));
+
+    // Initialize the board with all the tiles from the json
     party.initFromJson(jsonTiles);
 
     state = WaitingForPlayerServerState(this);
@@ -230,7 +245,7 @@ class WaitingForPlayerServerState extends ServerState {
       : super(etat: etat, init: init);
 
   factory WaitingForPlayerServerState.fromJson(Map<String, dynamic> json,
-      {ServerEtat? etat, bool init = true}) =>
+          {ServerEtat? etat, bool init = true}) =>
       WaitingForPlayerServerState(etat, init: init);
 
   @override
@@ -269,7 +284,7 @@ class StartGameServerState extends ServerState {
       : super(etat: etat, init: init);
 
   factory StartGameServerState.fromJson(Map<String, dynamic> json,
-      {ServerEtat? etat, bool init = true}) =>
+          {ServerEtat? etat, bool init = true}) =>
       StartGameServerState(etat, init: init);
 
   @override
@@ -284,7 +299,7 @@ class NewRoundServerState extends ServerState {
       : super(etat: etat, init: init);
 
   factory NewRoundServerState.fromJson(Map<String, dynamic> json,
-      {ServerEtat? etat, bool init = true}) =>
+          {ServerEtat? etat, bool init = true}) =>
       NewRoundServerState(etat, init: init);
 
   @override
@@ -293,28 +308,72 @@ class NewRoundServerState extends ServerState {
 
     // TODO : show stats
 
-    // new commune target for all players
-    final targetId = etat
-        .party.board.pois[Random().nextInt(etat.party.board.pois.length)].id;
-    final startIdTile = etat.party.board.tiles
-        .firstWhere((element) => element.containsWarehouse())
-        .id;
-    for (final player in etat.party.players) {
-      etat.party.addAction(
-          PartyAction.setupPlayerNewRound(player.id, targetId, startIdTile));
+    // update the round number
+    etat.party.addAction(PartyAction.updateRoundNumber(etat.party.round + 1));
+
+    final roundOptions = etat.optionsParty.optionsRounds[etat.party.round - 1];
+
+    late String startIdTile;
+
+    // get the starting tile
+    if (roundOptions.startPosition == "warehouse") {
+      startIdTile = etat.party.board.tiles
+          .firstWhere((tile) => tile.containsWarehouse())
+          .id;
+    } else {
+      startIdTile = etat.party.board.tiles
+          .firstWhere((tile) =>
+              tile.getPOIs().indexWhere(
+                  (poi) => poi.poiName == roundOptions.startPosition) !=
+              -1)
+          .id;
     }
+
+    // set points for all players
+    final newPoints =
+        etat.optionsRound.pointsSab ? null : etat.optionsRound.points;
+
+    for (final player in etat.party.players) {
+      // set to the first target
+      etat.party.addAction(PartyAction.updatePlayerGoalPOI(
+          player.id,
+          etat.party.board.pois
+              .firstWhere(
+                  (poi) => poi.poiName == etat.optionsRound.aims.targets![0])
+              .id,
+          0));
+
+      // set the start tile
+      etat.party
+          .addAction(PartyAction.setupPlayerNewRound(player.id, startIdTile));
+
+      // set the points if not the same as before
+      if (newPoints != null) {
+        etat.party.addAction(PartyAction.fixPlayerPoints(player.id, newPoints));
+      }
+    }
+
     // disable End of Round
     etat.party.addAction(PartyAction.updateEOR(false, []));
 
     // etat.state = ChooseVehicleServerState(etat);
 
-    // Give to to all players a bike
-    for (final player in etat.party.players) {
-      etat.party.addAction(
-          PartyAction.buyVehicle(player, 'b', true, spendPoints: false));
+    // give vehicle to all players
+    if (!etat.optionsRound.vehicleSab) {
+      for (final player in etat.party.players) {
+        for (final vehicle in etat.optionsRound.vehicle!) {
+          etat.party.addAction(PartyAction.buyVehicle(player, vehicle, true,
+              spendPoints: false));
+        }
+      }
     }
 
-    etat.state = NewPlayerServerState(etat);
+    // shop or no shop?
+    if (etat.optionsRound.startShopAvailable) {
+      etat.state = ChooseVehicleServerState(etat);
+    } else {
+      etat.state = NewPlayerServerState(etat);
+    }
   }
 }
 
@@ -323,7 +382,7 @@ class ChooseVehicleServerState extends ServerState {
       : super(etat: etat, init: init);
 
   factory ChooseVehicleServerState.fromJson(Map<String, dynamic> json,
-      {ServerEtat? etat, bool init = true}) =>
+          {ServerEtat? etat, bool init = true}) =>
       ChooseVehicleServerState(etat, init: init);
 
   @override
@@ -337,7 +396,7 @@ class ChooseVehicleServerState extends ServerState {
   @override
   void buyVehicle(String idPlayer, String type) {
     final player =
-    etat.party.players.firstWhere((element) => element.id == idPlayer);
+        etat.party.players.firstWhere((element) => element.id == idPlayer);
     final vehicle = Vehicle.fromType(type: type);
     // check if the player can buy the vehicle
     if (vehicle.getBuyCost() <= player.points &&
@@ -349,7 +408,7 @@ class ChooseVehicleServerState extends ServerState {
   @override
   void sellVehicle(String idPlayer, String type) {
     final player =
-    etat.party.players.firstWhere((element) => element.id == idPlayer);
+        etat.party.players.firstWhere((element) => element.id == idPlayer);
     final vehicle = Vehicle.fromType(type: type);
     // check if the player can sell the vehicle
     if (player.vehicles.isNotEmpty &&
@@ -380,7 +439,7 @@ class NewPlayerServerState extends ServerState {
       : super(etat: etat, init: init);
 
   factory NewPlayerServerState.fromJson(Map<String, dynamic> json,
-      {ServerEtat? etat, bool init = true}) =>
+          {ServerEtat? etat, bool init = true}) =>
       NewPlayerServerState(etat, init: init);
 
   @override
@@ -388,6 +447,15 @@ class NewPlayerServerState extends ServerState {
     // if all players are out => game over
     if (etat.party.players.every((p) => p.out)) {
       etat.state = GameOverServerState(etat);
+    }
+
+    // deduce the point to use the vehicle
+    if (etat.party.currentPlayer != null &&
+        etat.party.currentPlayer!.points >=
+            etat.party.currentPlayer!.vehicle!.getUseCost()) {
+      etat.party.addAction(PartyAction.deduceVehicleCost(
+          etat.party.currentPlayer!,
+          etat.party.currentPlayer!.vehicle!.getUseCost()));
     }
 
     // update mystery cards timer for skipped players
@@ -439,12 +507,8 @@ class NewPlayerServerState extends ServerState {
           etat.party.currentPlayer!.vehicle!.autonomy.toDouble()),
     );
 
-    // deduce the point to use the vehicle
-    if (etat.party.currentPlayer!.points >=
-        etat.party.currentPlayer!.vehicle!.getUseCost()) {
-      etat.party.currentPlayer!.points -=
-          etat.party.currentPlayer!.vehicle!.getUseCost();
-    } else {
+    if (etat.party.currentPlayer!.vehicle!.getUseCost() >
+        etat.party.currentPlayer!.points) {
       // This player can't move, he is out
       etat.party.addAction(PartyAction.playerOut(etat.party.currentPlayer!.id));
       etat.state = NewPlayerServerState(etat);
@@ -460,7 +524,7 @@ class ChooseBranchServerState extends ServerState {
       : super(etat: etat, init: init);
 
   factory ChooseBranchServerState.fromJson(Map<String, dynamic> json,
-      {ServerEtat? etat, bool init = true}) =>
+          {ServerEtat? etat, bool init = true}) =>
       ChooseBranchServerState(etat, init: init);
 
   @override
@@ -483,13 +547,11 @@ class MovePlayerServerState extends ServerState {
       : super(etat: etat, init: init);
 
   factory MovePlayerServerState.fromJson(Map<String, dynamic> json,
-      {ServerEtat? etat, bool init = true}) =>
+          {ServerEtat? etat, bool init = true}) =>
       MovePlayerServerState(etat, json['idTile'], init: init);
 
   @override
-  Map<String, dynamic> toJson() =>
-      super.toJson()
-        ..addAll({'idTile': idTile});
+  Map<String, dynamic> toJson() => super.toJson()..addAll({'idTile': idTile});
 
   @override
   void init() {
@@ -519,10 +581,10 @@ class MovePlayerServerState extends ServerState {
 
     // check if the player is on the target
     if (currentPlayer.currentTile!.id == currentPlayer.goalPOI!.id) {
-      // if the poi is the warehouse ?
-      if (currentPlayer.currentTile!.containsWarehouse()) {
-        // if the he is the first player to attend to the warehouse,
-        // turn true "End of Round"
+      // the player has reached all his goals?
+      if (currentPlayer.goalIndex ==
+          etat.optionsRound.aims.targets!.length - 1) {
+        // if the he is the first player turn true "End of Round"
         if (!etat.party.eor) {
           etat.party.addAction(PartyAction.updateEOR(
               true,
@@ -535,12 +597,16 @@ class MovePlayerServerState extends ServerState {
               PartyAction.updateVehicleAutonomy(currentPlayer.id, 0));
         }
       } else {
-        // set the objective to the warehouse
+        // set to the next goal
         etat.party.addAction(PartyAction.updatePlayerGoalPOI(
             currentPlayer.id,
-            etat.party.board.tiles
-                .firstWhere((element) => element.containsWarehouse())
-                .id));
+            etat.party.board.pois
+                .firstWhere((poi) =>
+                    poi.poiName ==
+                    etat.optionsRound.aims
+                        .targets![currentPlayer.goalIndex + 1])
+                .id,
+            currentPlayer.goalIndex + 1));
       }
     }
 
@@ -559,6 +625,7 @@ class MovePlayerServerState extends ServerState {
     // - 1 : A possible way (move automatically)
     // - >1 : Multiple possible way (ask the play)
     final possibleNextMove = currentPlayer.currentTile!.nexts
+        .where((t) => t.canPass(currentPlayer.vehicle!))
         .where((t) => t.id != previousTile.id)
         .toList();
     if (possibleNextMove.length != 1 && currentPlayer.autonomy > 0) {
@@ -577,7 +644,7 @@ class MovePlayerServerState extends ServerState {
     for (BoardAction boardAction in boardActions) {
       switch (boardAction.runtimeType) {
         case TakeMysteryCard:
-        // pick a card
+          // pick a card
           final card = TakeMysteryCard.getMysteryCard();
 
           // launch the pick card animation
@@ -627,7 +694,7 @@ class GameOverServerState extends ServerState {
       : super(etat: etat, init: init);
 
   factory GameOverServerState.fromJson(Map<String, dynamic> json,
-      {ServerEtat? etat, bool init = true}) =>
+          {ServerEtat? etat, bool init = true}) =>
       GameOverServerState(etat, init: init);
 
 // TODO game over state

@@ -51,6 +51,12 @@ abstract class PartyAction {
         return UpdatePlayerCardsAction.fromJson(json);
       case "event_animation":
         return EventAnimationAction.fromJson(json);
+      case "update_board_image_path":
+        return UpdateBoardImagePathAction.fromJson(json);
+      case "update_round_number":
+        return UpdateRoundNumberAction.fromJson(json);
+      case "update_player_points":
+        return UpdatePlayerPointsAction.fromJson(json);
       default:
         throw Exception("Unknown type of PartyAction: ${json["type"]}, "
             "did you forget to add it in the factory?");
@@ -77,9 +83,9 @@ abstract class PartyAction {
 
   /// Set player to new round
   factory PartyAction.setupPlayerNewRound(
-      String idPlayer, String idTarget, String idTile) {
+      String idPlayer, String idTile) {
     return SetPlayerAction(
-        id: idPlayer, idGoalPOI: idTarget, idCurrentTile: idTile);
+        id: idPlayer, idCurrentTile: idTile);
   }
 
   /// Buy a vehicle for a player
@@ -128,7 +134,8 @@ abstract class PartyAction {
   }
 
   /// Set the a new POI goal for the player
-  factory PartyAction.updatePlayerGoalPOI(String idPlayer, String idGoalPOI) {
+  factory PartyAction.updatePlayerGoalPOI(
+      String idPlayer, String idGoalPOI, int indexGoal) {
     return SetPlayerAction(id: idPlayer, idGoalPOI: idGoalPOI);
   }
 
@@ -151,6 +158,27 @@ abstract class PartyAction {
   /// Launch an event animation
   factory PartyAction.eventAnimation(EventAnimation eventAnimation) {
     return EventAnimationAction(eventAnimation);
+  }
+
+  /// Update the board image path
+  factory PartyAction.updateBoardImagePath(String path) {
+    return UpdateBoardImagePathAction(path);
+  }
+
+  /// Update the round number
+  factory PartyAction.updateRoundNumber(int roundNumber) {
+    return UpdateRoundNumberAction(roundNumber);
+  }
+
+  /// Fix the player's points
+  factory PartyAction.fixPlayerPoints(String idPlayer, PointCard points) {
+    return SetPlayerAction(id: idPlayer, points: points);
+  }
+
+  /// Deduce the cost of a vehicle to the player's points
+  /// Does not check if the player has enough points
+  factory PartyAction.deduceVehicleCost(Player player, PointCard cost) {
+    return UpdatePlayerPointsAction(player.id, player.points - cost);
   }
 }
 
@@ -210,6 +238,8 @@ class SetPlayerAction extends PartyAction {
 
   PointCard? points;
 
+  int? goalIndex;
+
   SetPlayerAction(
       {required this.id,
       this.name,
@@ -222,6 +252,7 @@ class SetPlayerAction extends PartyAction {
       this.ready,
       this.out,
       this.points,
+      this.goalIndex,
       String idAction = ''})
       : super(idAction: idAction);
 
@@ -238,6 +269,7 @@ class SetPlayerAction extends PartyAction {
         "ready": ready,
         "out": out,
         "points": points,
+        "goal_index": goalIndex,
       };
 
   factory SetPlayerAction.fromJson(Map<String, dynamic> json) {
@@ -257,7 +289,8 @@ class SetPlayerAction extends PartyAction {
         idAction: json["id_action"] as String,
         points: json["payload"]["points"] != null
             ? PointCard.fromJson(json["payload"]["points"])
-            : null);
+            : null,
+        goalIndex: json["payload"]["goal_index"] as int?);
   }
 
   @override
@@ -295,6 +328,9 @@ class SetPlayerAction extends PartyAction {
     }
     if (points != null) {
       player.points = points!;
+    }
+    if (goalIndex != null) {
+      player.goalIndex = goalIndex!;
     }
   }
 }
@@ -449,7 +485,7 @@ class UpdatePlayerPointsAction extends PartyAction {
   @override
   void perform(Party party) {
     var player = party.players.firstWhere((element) => element.id == id);
-    player.points += pointCard;
+    player.points = pointCard;
   }
 }
 
@@ -564,5 +600,57 @@ class EventAnimationAction extends PartyAction {
         EventAnimation.fromJson(
             json["payload"]["event_animation"] as Map<String, dynamic>),
         idAction: json["id_action"] as String);
+  }
+}
+
+/// Update board image path
+class UpdateBoardImagePathAction extends PartyAction {
+  @override
+  String get type => "update_board_image_path";
+
+  final String imagePath;
+
+  UpdateBoardImagePathAction(this.imagePath, {String idAction = ''})
+      : super(idAction: idAction);
+
+  @override
+  Map<String, dynamic> get payload => {
+        "image_path": imagePath,
+      };
+
+  factory UpdateBoardImagePathAction.fromJson(Map<String, dynamic> json) {
+    return UpdateBoardImagePathAction(json["payload"]["image_path"] as String,
+        idAction: json["id_action"] as String);
+  }
+
+  @override
+  void perform(Party party) {
+    party.board.updateBoardImagePath(imagePath);
+  }
+}
+
+/// Update round number
+class UpdateRoundNumberAction extends PartyAction {
+  @override
+  String get type => "update_round_number";
+
+  final int roundNumber;
+
+  UpdateRoundNumberAction(this.roundNumber, {String idAction = ''})
+      : super(idAction: idAction);
+
+  @override
+  Map<String, dynamic> get payload => {
+        "round_number": roundNumber,
+      };
+
+  factory UpdateRoundNumberAction.fromJson(Map<String, dynamic> json) {
+    return UpdateRoundNumberAction(json["payload"]["round_number"] as int,
+        idAction: json["id_action"] as String);
+  }
+
+  @override
+  void perform(Party party) {
+    party.round = roundNumber;
   }
 }

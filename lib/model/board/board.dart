@@ -18,14 +18,20 @@ class Board {
   static const String defaultBoard = 'default';
 
   /// list of all tiles
-  List<BTile> tiles = [];
+  List<BTile> _tiles = [];
+  List<BTile> get tiles => _tiles;
 
   /// list of all POIs
-  List<POIBTile> pois = [];
+  List<POIBTile> _pois = [];
+  List<POIBTile> get pois => _pois;
+
+  /// The path of the board image
+  String _pathToBoardImage = './assets/image/board/default_board.png';
+  String get pathToBoardImage => _pathToBoardImage;
 
   /// add a new tile to the board
   void addTile(String id, int x, int y) {
-    tiles += [TopDecoratorBTile(SimpleBTile(id: id, coord: TileCoord(x, y)))];
+    _tiles += [TopDecoratorBTile(SimpleBTile(id: id, coord: TileCoord(x, y)))];
   }
 
   /// connect two tiles
@@ -48,11 +54,16 @@ class Board {
       tile.addDecorator(decorator);
 
       if (decorator is POIBTile) {
-        pois += [decorator];
+        _pois += [decorator];
       }
     } catch (e) {
       print("Error while decorating tile $id");
     }
+  }
+
+  /// Update the board image path
+  void updateBoardImagePath(String path) {
+    _pathToBoardImage = path;
   }
 
   /// Get all tiles that are reachable from a tile (with a given number of moves)
@@ -153,7 +164,7 @@ abstract class BTile {
   /// Return the id of the tile
   String get id;
 
-  /// Return all the POIs of the tile
+  /// Return all the Points Of Interest of the tile
   List<POIBTile> getPOIs();
 
   /// Add a new DecoratorBTile to the tile
@@ -662,7 +673,7 @@ class GasolineVehicle extends Vehicle {
   double get maxLoad => 10;
 
   @override
-  int get autonomy => 4;
+  int get autonomy => 5;
 
   @override
   bool canPassExpressway() => true;
@@ -796,7 +807,12 @@ class Player {
   /// All the vehicles of the player
   List<Vehicle> vehicles;
 
+  /// The current target of the player
   POIBTile? goalPOI;
+
+  /// The current index target of the player for the current round
+  /// Used with the [OptionsRound]
+  int goalIndex = 0;
 
   /// The current position of the player
   BTile? currentTile;

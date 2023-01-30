@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cubes/cubes.dart';
 import 'package:dcn_game/model/board/party_action.dart';
+import 'package:dcn_game/model/index.dart';
 import 'package:dcn_game/model/repository/event_animation_repository.dart';
 import 'package:hive/hive.dart';
 
@@ -61,21 +62,27 @@ class PartyRepository {
 
   /// fetch the current party
   Future<void> updateParty() async {
-    // fetch the party id
     List<PartyAction> history;
-    var res = await restClient.getPartyId();
-    final id = res.id;
-    if (party.value == null || party.value!.id != id) {
-      // fetch all the history of the current party
-      // TODO : maybe edit this for supporting multiple parties
-      history = await restClient.getPartyHistory(id);
-      thisPlayerId = null;
-      party.update(Party(id));
-    } else {
-      // fetch the party history
-      history = await restClient.getPartyHistorySince(
-          id, party.value!.history.length);
+    try {
+      // fetch the party id
+      var res = await restClient.getPartyId();
+      final id = res.id;
+      if (party.value == null || party.value!.id != id) {
+        // fetch all the history of the current party
+        // TODO : maybe edit this for supporting multiple parties
+        history = await restClient.getPartyHistory(id);
+        thisPlayerId = null;
+        party.update(Party(id));
+      } else {
+        // fetch the party history
+        history = await restClient.getPartyHistorySince(
+            id, party.value!.history.length);
+      }
+    } catch (e) {
+      print(e);
+      return;
     }
+
 
     // apply the history
     for (final action in history) {

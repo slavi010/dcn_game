@@ -21,8 +21,8 @@ import '../../model/event_animation.dart';
 /// - the left is the map of the board (2/3 of the screen)
 /// - the right is the list of the players, information and possible actions (1/3 of the screen)
 class BoardPage extends CubeWidget<BoardPageCube> {
-  final imageWidth = 1024.0;
-  final imageHeight = 769.0;
+  final imageWidth = 982.0;
+  final imageHeight = 721.0;
 
   const BoardPage({super.key});
 
@@ -44,7 +44,9 @@ class BoardPage extends CubeWidget<BoardPageCube> {
                         // center the image on the stack
                         Positioned.fill(
                           child: Image.asset(
-                            'image/board/board_A.jpg',
+                            cube.partyRepository.party.value?.board
+                                    .pathToBoardImage ??
+                                '',
                             fit: BoxFit.none,
                             width: double.infinity,
                             height: double.infinity,
@@ -245,7 +247,7 @@ class BackgroundBoardTileWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return isReachable || isPossibleMove
         ? MirrorAnimationBuilder(
-            tween: Tween<double>(begin: .1, end: 0.3),
+            tween: Tween<double>(begin: .3, end: 0.5),
             duration: const Duration(seconds: 1),
             builder: (context, valueAnimation, child) {
               return ShadowGlassContainer(
@@ -258,15 +260,15 @@ class BackgroundBoardTileWidget extends StatelessWidget {
                     ? LinearGradient(
                         colors: [
                           Colors.yellow.withOpacity(valueAnimation),
-                          Colors.yellow.withOpacity(0.1),
+                          Colors.yellow.withOpacity(0.2),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       )
                     : LinearGradient(
                         colors: [
+                          Colors.green.withOpacity(0.3),
                           Colors.green.withOpacity(0.2),
-                          Colors.green.withOpacity(0.1),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -308,18 +310,19 @@ class MysteryCardDialogWidget extends CubeWidget<MysteryCardDialogWidgetCube> {
             mysteryCardEvent != null
                 ? AlertDialog(
                     title: ShadowGlassContainer(
-                      padding: const EdgeInsets.all(16),
-                      child: CustomGlassText(
-                          'Mystery card ${mysteryCardEvent.mysteryCard.name}'),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Center(
+                          child: CustomGlassText(
+                              mysteryCardEvent.mysteryCard.name),
+                        ),
+                      ),
                     ),
                     backgroundColor: Colors.transparent,
                     content: ShadowGlassContainer(
-                      padding: const EdgeInsets.all(16),
-                      child: SingleChildScrollView(
-                        child: SizedBox(
-                          width: context.widthScreen < 500
-                              ? context.widthScreen
-                              : context.widthScreen / 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: SingleChildScrollView(
                           child: MysteryCardWidget(
                               mysteryCard: mysteryCardEvent.mysteryCard,
                               playerId: mysteryCardEvent.playerId),
@@ -366,6 +369,7 @@ class MysteryCardWidget extends CubeWidget<MysteryCardWidgetCube> {
   @override
   Widget buildView(BuildContext context, MysteryCardWidgetCube cube) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text('${cube.getPlayerName(playerId)} has picked a card !'),
         const SizedBox(
@@ -415,6 +419,9 @@ class UIBoardPage extends CubeWidget<UIBoardPageCube> {
 
             // the points of the this player
             _points(context, cube),
+
+            // target
+            _target(context, cube),
           ],
         ),
       ),
@@ -453,35 +460,55 @@ class UIBoardPage extends CubeWidget<UIBoardPageCube> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // current player points
             ListTile(
               title: CustomGlassText(
                 'Current points',
                 style: context.textTheme.headline6,
               ),
-              subtitle: PointCardWidget(
-                points: cube.partyRepository.thisPlayer?.points,
-              ),
+              subtitle: cube.partyRepository.party
+                  .build<Party?>((party) => PointCardWidget(
+                        points: cube.partyRepository.thisPlayer?.points,
+                      )),
             ),
             const SizedBox(width: 8),
 
-            // show the vehicle cost usage if current player turn
-            if (cube.isThisPlayerTurn())
-              ListTile(
-                title: Flexible(
-                  child: CustomGlassText(
-                    'You will spend/earn this to use your vehicles for this turn',
-                    style: context.textTheme.headline6,
-                  ),
-                ),
-                subtitle: PointCardWidget(
-                  points:
-                      cube.partyRepository.thisPlayer?.vehicle?.getUseCost(),
-                  negativeColor: Colors.black,
-                  positiveColor: Colors.lightGreen,
-                  reverseValues: true,
+            ListTile(
+              title: Flexible(
+                child: CustomGlassText(
+                  'You will spend/earn this to use your vehicles for '
+                  '${cube.isThisPlayerTurn() ? 'this' : 'the next'} turn',
+                  style: context.textTheme.headline6,
                 ),
               ),
+              subtitle: PointCardWidget(
+                points: cube.partyRepository.thisPlayer?.vehicle?.getUseCost(),
+                negativeColor: Colors.black,
+                positiveColor: Colors.lightGreen,
+                reverseValues: true,
+              ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Show this player target
+  Widget _target(BuildContext context, UIBoardPageCube cube) {
+    return ShadowGlassContainer(
+      padding: const EdgeInsets.all(8),
+      child: SizedBox(
+        width: min(context.widthScreen, 300),
+        child: ListTile(
+          title: CustomGlassText(
+            'Target',
+            style: context.textTheme.headline6,
+          ),
+          subtitle: CustomGlassText(
+            '-> ${cube.partyRepository.thisPlayer?.goalPOI?.poiName}' ?? '',
+            style: context.textTheme.subtitle1,
+          ),
         ),
       ),
     );
